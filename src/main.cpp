@@ -18,11 +18,33 @@ int main()
                 window.close();
         }
 
-        // clear the window with black color
-        window.clear(sf::Color::Black);
+        window.clear(sf::Color::White);
 
         // draw everything here...
-        // window.draw(...);
+        // window.draw(...);sf::Text text;
+        sf::Text text;
+        sf::Font font;
+        if (!font.loadFromFile("../../../fonts/arial.ttf"))
+        {
+            // error...
+        }
+
+        text.setFont(font); // font is a sf::Font
+
+        // set the string to display
+        text.setString("Hello world");
+
+        // set the character size
+        text.setCharacterSize(24); // in pixels, not points!
+
+        // set the color
+        text.setFillColor(sf::Color::Red);
+
+        // set the text style
+        text.setStyle(sf::Text::Bold | sf::Text::Underlined);
+
+        // inside the main loop, between window.clear() and window.display()
+        window.draw(text);
 
         // end the current frame
         window.display();
