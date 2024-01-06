@@ -10,9 +10,9 @@ constexpr float epsilon = 0.0000001f;
 
 struct Vec3
 {
-    float x;
-    float y;
-    float z;
+    float x = 0.0f;
+    float y = 0.0f;
+    float z = 0.0f;
 
     inline float Dot(const Vec3& other) const
     {
