@@ -1,4 +1,4 @@
-add_executable(${PROJECT_NAME} main.cpp Circle.cpp ConvexPolygon.cpp)
+add_executable(${PROJECT_NAME} main.cpp Circle.cpp ConvexPolygon.cpp Rigidbody.cpp)
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_20)
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/include)
 

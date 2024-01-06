@@ -1,11 +1,7 @@
 #ifndef PHYSICS_I_COLLIDER_H
 #define PHYSICS_I_COLLIDER_H
 
-// Forward declaration for SFML shape.
-namespace sf
-{
-    class Shape;
-}
+#include "SFML/Graphics/Shape.hpp"
 
 namespace physics
 {
