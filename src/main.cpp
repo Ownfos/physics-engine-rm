@@ -23,7 +23,20 @@ rigidbody
 collision: (rigidbody, rigidbody) -> collision_info
 
 collision_info
--
+- objects in contact
+- list of contact points (global coordinate)
+- penetration depth
+- contact normal (minimum translation vector)
+
+TODO:
+- implement circle-circle collision check
+- render contact points
+- implement impulse resolution
+- test impulse resolution with circle-circle collision
+- implement circle-polygon collision check
+- implement polygon-polygon collision check
+- implement spring
+- implement object grapping using spring
 */
 
 int main()
