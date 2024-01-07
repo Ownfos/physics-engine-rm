@@ -38,21 +38,21 @@ struct Vec3
         return std::sqrt(SquaredMagnitude());
     }
 
+    inline bool IsZero() const
+    {
+        return SquaredMagnitude() < epsilon;
+    }
+
     void Normalize()
     {
-        if (auto magnitude = Magnitude(); magnitude < epsilon)
+        // Note: We cannot normalize a zero vector!
+        //       This if statement prevents divide-by-zero.
+        if (!IsZero())
         {
-            // Normalizing a zero vector is impossible.
-            // Just keep it as a zero vector.
-            x = 0.0f;
-            y = 0.0f;
-            z = 0.0f;
-        }
-        else
-        {
-            x /= magnitude;
-            y /= magnitude;
-            z /= magnitude;
+            const auto m = Magnitude();
+            x /= m;
+            y /= m;
+            z /= m;
         }
     }
 };

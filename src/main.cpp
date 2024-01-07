@@ -44,12 +44,14 @@ int main()
     sf::RenderWindow window(sf::VideoMode(800, 600), "physics!");
     if (!ImGui::SFML::Init(window)) return -1;
 
-    auto circle = Rigidbody(std::make_shared<Circle>(4.0f));
-    auto triangle = Rigidbody(std::make_shared<ConvexPolygon>(std::vector<Vec3>{
-        {-50.0f, -50.0f},
-        {50.0f, -50.0f},
-        {50.0f, 50.0f}
-    }));
+    auto object1 = Rigidbody(std::make_shared<Circle>(10.0f));
+    auto object2 = Rigidbody(std::make_shared<Circle>(20.0f));
+    auto dot = Circle(2);
+    // auto object2 = Rigidbody(std::make_shared<ConvexPolygon>(std::vector<Vec3>{
+    //     {-50.0f, -50.0f},
+    //     {50.0f, -50.0f},
+    //     {50.0f, 50.0f}
+    // }));
 
     sf::Clock deltaClock;
     while (window.isOpen())
@@ -66,28 +68,41 @@ int main()
         ImGui::Begin("test window");
         static float x_offset = 0;
         ImGui::SliderFloat("x offset", &x_offset, 0.0f, 100.0f);
-        static float rotation = 0;
-        ImGui::SliderFloat("rotation", &rotation, 0.0f, 360.0f);
+        static float y_offset = 0;
+        ImGui::SliderFloat("rotation", &y_offset, 0.0f, 100.0f);
         ImGui::End();
+
+        object1.SetPosition({100 + x_offset, 100 + y_offset});
+        object2.SetPosition({150, 100});
 
         window.clear(sf::Color::White);
 
         // draw polygon
         {
-            auto& shape = triangle.SFMLShape();
-            shape.setFillColor(sf::Color::Black);
-            shape.setRotation(rotation);
-            shape.setPosition(100 + x_offset, 100);
+            auto& shape = object1.SFMLShape();
+            shape.setFillColor(sf::Color::Transparent);
+            shape.setOutlineColor(sf::Color::Black);
+            shape.setOutlineThickness(1);
             window.draw(shape);
         }
 
         // draw circle
         {
-            auto& shape = circle.SFMLShape();
-            shape.setFillColor(sf::Color::Red);
-            shape.setRotation(rotation);
-            shape.setPosition(100 + x_offset, 100);
+            auto& shape = object2.SFMLShape();
+            shape.setFillColor(sf::Color::Transparent);
+            shape.setOutlineColor(sf::Color::Black);
+            shape.setOutlineThickness(1);
             window.draw(shape);
+        }
+
+        // draw contact point if collision occurred
+        if (auto collision = object1.CheckCollision(object2))
+        {
+            auto [x, y, _] = collision->contacts[0];
+            auto& dot_shape = dot.SFMLShape();
+            dot_shape.setFillColor(sf::Color::Red);
+            dot_shape.setPosition(x, y);
+            window.draw(dot_shape);
         }
 
 
