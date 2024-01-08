@@ -6,9 +6,12 @@
 namespace physics
 {
 
-Rigidbody::Rigidbody(std::shared_ptr<ICollider> collider)
+Rigidbody::Rigidbody(std::shared_ptr<ICollider> collider, float mass, float inertia)
     : m_collider(collider)
-{}
+{
+    SetMass(mass);
+    SetInertia(inertia);
+}
 
 const ICollider* Rigidbody::Collider() const
 {
@@ -37,7 +40,6 @@ const Vec3& Rigidbody::AngularVelocity() const
 
 void Rigidbody::SetPosition(const Vec3& new_position)
 {
-    // Precondition: position should stay on 2D plane.
     assert(std::abs(new_position.z) < epsilon);
 
     m_displacement.linear = new_position;
@@ -45,8 +47,45 @@ void Rigidbody::SetPosition(const Vec3& new_position)
 
 void Rigidbody::SetRotation(Radian new_rotation)
 {
-    // Note: rotation vectors are treated as 3D vectors with z-component.
     m_displacement.angular.z = new_rotation;
+}
+
+/**
+ * @brief Calculate the inverse of given real number.
+ * @return (1 / value) if the value is nonzero.
+ *         0 if the value is zero.
+ */
+float Inverse(float value)
+{
+    if (value < epsilon)
+    {
+        return 0.0f;
+    }
+    else
+    {
+        return 1.0f / value;
+    }
+}
+
+void Rigidbody::SetMass(float new_mass)
+{
+    assert(new_mass >= 0.0f);
+
+    m_inv_mass = Inverse(new_mass);
+}
+
+void Rigidbody::SetInertia(float new_inertia)
+{
+    assert(new_inertia >= 0.0f);
+
+    m_inv_inertia = Inverse(new_inertia);
+}
+
+void Rigidbody::MakeObjectStatic()
+{
+    // Give infinite mass and inertia.
+    m_inv_mass = 0.0f;
+    m_inv_inertia = 0.0f;
 }
 
 sf::Shape& Rigidbody::SFMLShape()
@@ -160,7 +199,8 @@ std::optional<CollisionInfo> Rigidbody::CheckCollision(Rigidbody& other)
         return {};
     }
 
-    // Note: we only have two collider types (circle & polygon)
+    // We only have two collider types (circle & polygon),
+    // so there are four possible combinations.
     const bool is_this_circle = Collider()->Type() == ColliderType::Circle;
     const bool is_other_circle = other.Collider()->Type() == ColliderType::Circle;
     if (is_this_circle && is_other_circle)
@@ -179,6 +219,30 @@ std::optional<CollisionInfo> Rigidbody::CheckCollision(Rigidbody& other)
     {
         return PolygonToPolygonCollisionCheck(*this, other);
     }
+}
+
+void Rigidbody::ApplyImpulse(const Vec3& rel_impact_pos, const Vec3& impulse, float delta_time)
+{
+    // J = F * Δt, assuming constant force.
+    const auto force_over_time = impulse / delta_time;
+
+    // τ = r x F
+    m_acceleration.angular += rel_impact_pos.Cross(force_over_time) * m_inv_inertia;
+    m_acceleration.linear += force_over_time * m_inv_mass;
+}
+
+void Rigidbody::Update(float delta_time)
+{
+    m_displacement.linear += m_velocity.linear * delta_time;
+    m_displacement.angular += m_velocity.angular * delta_time;
+
+    m_velocity.linear += m_acceleration.linear * delta_time;
+    m_velocity.angular += m_acceleration.angular * delta_time;
+
+    // Accumulated acceleration is valid only for a single time step.
+    // Reset them to zero for next time step.
+    m_acceleration.linear = {};
+    m_acceleration.angular = {};
 }
 
 } // namespace physics

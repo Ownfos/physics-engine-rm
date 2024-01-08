@@ -43,10 +43,13 @@ struct Vec3
         return SquaredMagnitude() < epsilon;
     }
 
+    /**
+     * @note We cannot normalize a zero vector!
+     *       In such case, the vector stays the same.
+     */
     void Normalize()
     {
-        // Note: We cannot normalize a zero vector!
-        //       This if statement prevents divide-by-zero.
+        // This if statement prevents divide-by-zero.
         if (!IsZero())
         {
             const auto m = Magnitude();
@@ -56,6 +59,42 @@ struct Vec3
         }
     }
 };
+
+inline Vec3& operator+=(Vec3& lhs, const Vec3& rhs)
+{
+    lhs.x += rhs.x;
+    lhs.y += rhs.y;
+    lhs.z += rhs.z;
+
+    return lhs;
+}
+
+inline Vec3& operator-=(Vec3& lhs, const Vec3& rhs)
+{
+    lhs.x -= rhs.x;
+    lhs.y -= rhs.y;
+    lhs.z -= rhs.z;
+    
+    return lhs;
+}
+
+inline Vec3& operator/=(Vec3& v, float scale)
+{
+    v.x /= scale;
+    v.y /= scale;
+    v.z /= scale;
+    
+    return v;
+}
+
+inline Vec3& operator*=(Vec3& v, float scale)
+{
+    v.x *= scale;
+    v.y *= scale;
+    v.z *= scale;
+    
+    return v;
+}
 
 inline Vec3 operator+(const Vec3& lhs, const Vec3& rhs)
 {

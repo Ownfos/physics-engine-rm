@@ -26,7 +26,7 @@ struct CollisionInfo
     // in order to resolve this collision.
     Vec3 normal;
 
-    // Minimal distance required to separate two objects/
+    // Minimal distance required to separate two objects.
     float penetration_depth;
 };
 

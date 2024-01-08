@@ -4,6 +4,7 @@
 #include "Circle.h"
 #include "ConvexPolygon.h"
 #include "Rigidbody.h"
+#include "Gizmo.h"
 
 using namespace physics;
 
@@ -44,9 +45,13 @@ int main()
     sf::RenderWindow window(sf::VideoMode(800, 600), "physics!");
     if (!ImGui::SFML::Init(window)) return -1;
 
-    auto object1 = Rigidbody(std::make_shared<Circle>(10.0f));
-    auto object2 = Rigidbody(std::make_shared<Circle>(20.0f));
-    auto dot = Circle(2);
+    auto object1 = Rigidbody(std::make_shared<Circle>(10.0f), 0, 0);
+    auto object2 = Rigidbody(std::make_shared<Circle>(20.0f), 10, 10);
+    object2.SetPosition({150, 100});
+
+    auto gizmo = Gizmo();
+
+    // This comment block is kept as an example usage of ConvexPolygon class.
     // auto object2 = Rigidbody(std::make_shared<ConvexPolygon>(std::vector<Vec3>{
     //     {-50.0f, -50.0f},
     //     {50.0f, -50.0f},
@@ -64,16 +69,22 @@ int main()
                 window.close();
         }
 
-        ImGui::SFML::Update(window, deltaClock.restart());
+        auto delta_time = deltaClock.restart();
+        ImGui::SFML::Update(window, delta_time);
         ImGui::Begin("test window");
         static float x_offset = 0;
-        ImGui::SliderFloat("x offset", &x_offset, 0.0f, 100.0f);
+        ImGui::SliderFloat("x offset", &x_offset, -100.0f, 100.0f);
         static float y_offset = 0;
-        ImGui::SliderFloat("rotation", &y_offset, 0.0f, 100.0f);
+        ImGui::SliderFloat("rotation", &y_offset, -100.0f, 100.0f);
+        if (ImGui::Button("reset position"))
+        {
+            x_offset = 0;
+            y_offset = 0;
+            object2.SetPosition({150, 100});
+        }
         ImGui::End();
 
         object1.SetPosition({100 + x_offset, 100 + y_offset});
-        object2.SetPosition({150, 100});
 
         window.clear(sf::Color::White);
 
@@ -98,12 +109,19 @@ int main()
         // draw contact point if collision occurred
         if (auto collision = object1.CheckCollision(object2))
         {
-            auto [x, y, _] = collision->contacts[0];
-            auto& dot_shape = dot.SFMLShape();
-            dot_shape.setFillColor(sf::Color::Red);
-            dot_shape.setPosition(x, y);
-            window.draw(dot_shape);
+            for (const auto& contact : collision->contacts)
+            {
+                window.draw(gizmo.Point(contact, sf::Color::Red));
+                window.draw(gizmo.Direction(contact, collision->normal));
+
+                object2.ApplyImpulse(
+                    (contact - object2.Position()),
+                    collision->normal,
+                    delta_time.asSeconds()
+                );
+            }
         }
+        object2.Update(delta_time.asSeconds());
 
 
         ImGui::SFML::Render(window);
