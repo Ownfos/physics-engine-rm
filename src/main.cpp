@@ -30,12 +30,12 @@ collision_info
 - contact normal (minimum translation vector)
 
 TODO:
-- implement circle-circle collision check
-- render contact points
-- implement impulse resolution
-- test impulse resolution with circle-circle collision
+- implement soft positional correction
+- implement impulse resolution with angular momentum conservation
 - implement circle-polygon collision check
 - implement polygon-polygon collision check
+- implement friction
+- implement damping
 - implement spring
 - implement object grapping using spring
 */
