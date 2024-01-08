@@ -1,4 +1,4 @@
-#include "Rigidbody.h"
+﻿#include "Rigidbody.h"
 #include "Circle.h"
 #include "ConvexPolygon.h"
 #include <cassert>
@@ -6,16 +6,31 @@
 namespace physics
 {
 
-Rigidbody::Rigidbody(std::shared_ptr<ICollider> collider, float mass, float inertia)
-    : m_collider(collider)
+Rigidbody::Rigidbody(
+    std::shared_ptr<ICollider> collider,
+    const MaterialProperties& material,
+    float mass,
+    float inertia
+)
+    : m_collider(collider), m_material(material)
 {
     SetMass(mass);
     SetInertia(inertia);
 }
 
+ICollider* Rigidbody::Collider()
+{
+    return m_collider.get();
+}
+
 const ICollider* Rigidbody::Collider() const
 {
     return m_collider.get();
+}
+
+const MaterialProperties& Rigidbody::Material() const
+{
+    return m_material;
 }
 
 const Vec3& Rigidbody::Position() const
@@ -38,11 +53,43 @@ const Vec3& Rigidbody::AngularVelocity() const
     return m_velocity.angular;
 }
 
+float Rigidbody::InverseMass() const
+{
+    return m_inv_mass;
+}
+
+float Rigidbody::InverseInertia() const
+{
+    return m_inv_inertia;
+}
+
+Vec3 Rigidbody::GlobalPosition(const Vec3& local_pos) const
+{
+    // The offset of local point w.r.t. the
+    // object's origin in global coordinate.
+    auto rotated_offset = local_pos;
+    rotated_offset.Rotate(Rotation().z);
+    
+    return Position() + rotated_offset;
+}
+
+Vec3 Rigidbody::GlobalVelocity(const Vec3& local_pos) const
+{
+    return LinearVelocity() + AngularVelocity().Cross(local_pos);
+}
+
 void Rigidbody::SetPosition(const Vec3& new_position)
 {
     assert(std::abs(new_position.z) < epsilon);
 
     m_displacement.linear = new_position;
+}
+
+void Rigidbody::MovePosition(const Vec3& offset)
+{
+    assert(std::abs(offset.z) < epsilon);
+
+    m_displacement.linear += offset;
 }
 
 void Rigidbody::SetRotation(Radian new_rotation)
@@ -86,15 +133,6 @@ void Rigidbody::MakeObjectStatic()
     // Give infinite mass and inertia.
     m_inv_mass = 0.0f;
     m_inv_inertia = 0.0f;
-}
-
-sf::Shape& Rigidbody::SFMLShape()
-{
-    auto& shape = m_collider->SFMLShape();
-    shape.setPosition(m_displacement.linear.x, m_displacement.linear.y);
-    shape.setRotation(m_displacement.angular.z);
-
-    return shape;
 }
 
 bool Rigidbody::IsOutOfBoundaryRadius(const Rigidbody& other) const
@@ -243,6 +281,11 @@ void Rigidbody::Update(float delta_time)
     // Reset them to zero for next time step.
     m_acceleration.linear = {};
     m_acceleration.angular = {};
+
+    // Synchonize SFML representation with physical state.
+    auto& shape = m_collider->SFMLShape();
+    shape.setPosition(m_displacement.linear.x, m_displacement.linear.y);
+    shape.setRotation(m_displacement.angular.z);
 }
 
 } // namespace physics

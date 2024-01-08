@@ -3,8 +3,8 @@
 #include "imgui-SFML.h"
 #include "Circle.h"
 #include "ConvexPolygon.h"
-#include "Rigidbody.h"
 #include "Gizmo.h"
+#include "World.h"
 
 using namespace physics;
 
@@ -43,13 +43,30 @@ TODO:
 int main()
 {
     sf::RenderWindow window(sf::VideoMode(800, 600), "physics!");
+    window.setFramerateLimit(60);
     if (!ImGui::SFML::Init(window)) return -1;
 
-    auto object1 = Rigidbody(std::make_shared<Circle>(10.0f), 0, 0);
-    auto object2 = Rigidbody(std::make_shared<Circle>(20.0f), 10, 10);
-    object2.SetPosition({150, 100});
 
     auto gizmo = Gizmo();
+
+    // Initialize world.
+    auto world = World();
+
+    auto bouncy_mat = MaterialProperties{
+        .restitution = 0.9f,
+        .static_friction = 0.8f,
+        .dynamic_friction = 0.5f
+    };
+
+    auto shape1 = std::make_shared<Circle>(10.0f);
+    auto object1 = std::make_shared<Rigidbody>(shape1, bouncy_mat, 10, 10);
+    object1->SetPosition({100, 110});
+    world.AddObject(object1);
+
+    auto shape2 = std::make_shared<Circle>(20.0f);
+    auto object2 = std::make_shared<Rigidbody>(shape2, bouncy_mat, 0, 0);
+    object2->SetPosition({100, 150});
+    world.AddObject(object2);
 
     // This comment block is kept as an example usage of ConvexPolygon class.
     // auto object2 = Rigidbody(std::make_shared<ConvexPolygon>(std::vector<Vec3>{
@@ -72,59 +89,45 @@ int main()
         auto delta_time = deltaClock.restart();
         ImGui::SFML::Update(window, delta_time);
         ImGui::Begin("test window");
-        static float x_offset = 0;
-        ImGui::SliderFloat("x offset", &x_offset, -100.0f, 100.0f);
-        static float y_offset = 0;
-        ImGui::SliderFloat("rotation", &y_offset, -100.0f, 100.0f);
-        if (ImGui::Button("reset position"))
+        ImGui::Text("height: %f", object1->Position().y);
+        // if (ImGui::Button("push down"))
         {
-            x_offset = 0;
-            y_offset = 0;
-            object2.SetPosition({150, 100});
+            // Approximate gravity
+            object1->ApplyImpulse({}, {0, 9.8f / object1->InverseMass()}, delta_time.asSeconds());
         }
         ImGui::End();
 
-        object1.SetPosition({100 + x_offset, 100 + y_offset});
+
+        world.CheckCollisions();
+        world.ResolveCollisions(delta_time.asSeconds());
+        world.Update(delta_time.asSeconds());
 
         window.clear(sf::Color::White);
 
-        // draw polygon
+        // Draw all objects.
+        for (auto& object : world.Objects())
         {
-            auto& shape = object1.SFMLShape();
+            auto& shape = object->Collider()->SFMLShape();
             shape.setFillColor(sf::Color::Transparent);
             shape.setOutlineColor(sf::Color::Black);
-            shape.setOutlineThickness(1);
+            shape.setOutlineThickness(2);
             window.draw(shape);
         }
 
-        // draw circle
+        // Draw contact points for all collisions.
+        for (const auto& collision : world.Collisions())
         {
-            auto& shape = object2.SFMLShape();
-            shape.setFillColor(sf::Color::Transparent);
-            shape.setOutlineColor(sf::Color::Black);
-            shape.setOutlineThickness(1);
-            window.draw(shape);
-        }
-
-        // draw contact point if collision occurred
-        if (auto collision = object1.CheckCollision(object2))
-        {
-            for (const auto& contact : collision->contacts)
+            for (const auto& contact : collision.contacts)
             {
                 window.draw(gizmo.Point(contact, sf::Color::Red));
-                window.draw(gizmo.Direction(contact, collision->normal));
-
-                object2.ApplyImpulse(
-                    (contact - object2.Position()),
-                    collision->normal,
-                    delta_time.asSeconds()
-                );
+                window.draw(gizmo.Direction(contact, collision.normal));
             }
         }
-        object2.Update(delta_time.asSeconds());
 
-
+        // Draw GUI.
         ImGui::SFML::Render(window);
+
+        // Update screen.
         window.display();
     }
     ImGui::SFML::Shutdown();

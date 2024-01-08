@@ -1,6 +1,7 @@
 #ifndef PHYSICS_VEC3_H
 #define PHYSICS_VEC3_H
 
+#include "Angle.h"
 #include <cmath>
 
 namespace physics
@@ -14,128 +15,36 @@ struct Vec3
     float y = 0.0f;
     float z = 0.0f;
 
-    inline float Dot(const Vec3& other) const
-    {
-        return x * other.x + y * other.y + z * other.z;
-    }
+    Vec3& operator+=(const Vec3& other);
+    Vec3& operator-=(const Vec3& other);
+    Vec3& operator/=(float scale);
+    Vec3& operator*=(float scale);
 
-    inline Vec3 Cross(const Vec3& other) const
-    {
-        return {
-            y * other.z - z * other.y,
-            z * other.x - x * other.z,
-            x * other.y - y * other.z
-        };
-    }
+    Vec3 operator+(const Vec3& other) const;
+    Vec3 operator-(const Vec3& other) const;
+    Vec3 operator-() const;
+    Vec3 operator/(float scale) const;
+    Vec3 operator*(float scale) const;
+    friend Vec3 operator*(float scale, const Vec3& v);
 
-    inline float SquaredMagnitude() const
-    {
-        return x * x + y * y + z * z;
-    }
+    float Dot(const Vec3& other) const;
+    Vec3 Cross(const Vec3& other) const;
 
-    inline float Magnitude() const
-    {
-        return std::sqrt(SquaredMagnitude());
-    }
+    float SquaredMagnitude() const;
+    float Magnitude() const;
 
-    inline bool IsZero() const
-    {
-        return SquaredMagnitude() < epsilon;
-    }
+    bool IsZero() const;
 
     /**
      * @note We cannot normalize a zero vector!
      *       In such case, the vector stays the same.
      */
-    void Normalize()
-    {
-        // This if statement prevents divide-by-zero.
-        if (!IsZero())
-        {
-            const auto m = Magnitude();
-            x /= m;
-            y /= m;
-            z /= m;
-        }
-    }
+    void Normalize();
+
+    void Rotate(Radian angle);
+
+    Vec3 Projection(const Vec3& normalized_dir) const;
 };
-
-inline Vec3& operator+=(Vec3& lhs, const Vec3& rhs)
-{
-    lhs.x += rhs.x;
-    lhs.y += rhs.y;
-    lhs.z += rhs.z;
-
-    return lhs;
-}
-
-inline Vec3& operator-=(Vec3& lhs, const Vec3& rhs)
-{
-    lhs.x -= rhs.x;
-    lhs.y -= rhs.y;
-    lhs.z -= rhs.z;
-    
-    return lhs;
-}
-
-inline Vec3& operator/=(Vec3& v, float scale)
-{
-    v.x /= scale;
-    v.y /= scale;
-    v.z /= scale;
-    
-    return v;
-}
-
-inline Vec3& operator*=(Vec3& v, float scale)
-{
-    v.x *= scale;
-    v.y *= scale;
-    v.z *= scale;
-    
-    return v;
-}
-
-inline Vec3 operator+(const Vec3& lhs, const Vec3& rhs)
-{
-    return {
-        lhs.x + rhs.x,
-        lhs.y + rhs.y,
-        lhs.z + rhs.z
-    };
-}
-
-inline Vec3 operator-(const Vec3& lhs, const Vec3& rhs)
-{
-    return {
-        lhs.x - rhs.x,
-        lhs.y - rhs.y,
-        lhs.z - rhs.z
-    };
-}
-
-inline Vec3 operator/(const Vec3& v, float scale)
-{
-    return {
-        v.x / scale,
-        v.y / scale,
-        v.z / scale
-    };
-}
-
-inline Vec3 operator*(const Vec3& v, float scale)
-{
-    return {
-        v.x * scale,
-        v.y * scale,
-        v.z * scale
-    };
-}
-
-inline Vec3 operator*(float scale, const Vec3& v)
-{
-    return scale * v;
-}
 
 } // namespace physics
 

@@ -27,21 +27,76 @@ struct DoF
     Vec3 angular;
 };
 
+// A set of physical constants that determine dynamics.
+// 
+// @note These coefficients are supposed to be defined between a pair of objects,
+//       but I just decided to give a value for each object
+//       and use the average as an approximation.
+struct MaterialProperties
+{
+    /**
+     * @brief Decides how 'bouncy' an object is.
+     * @note 0: perfectly inelastic collision
+     * @note 1: perfectly elastic collision
+     */
+    float restitution;
+
+    /**
+     * @brief Decides the lower bound of horizontal force
+     *        required to make a static object move.
+     * @note While Ft < Fn * @p static_friction,
+     *       -Ft is applied to cancel external tangent force Ft.
+     * @note Ft: force along tangent direction.
+     * @note Fn: force along normal direction.
+     */
+    float static_friction;
+
+    /**
+     * @brief Decides the ratio of vertical force translated into friction force.
+     * @note This coefficient is used whenever a contact point
+     *       has nonzero relative velocity w.r.t. the other object.
+     */
+    float dynamic_friction;
+
+    inline MaterialProperties Average(const MaterialProperties& other) const
+    {
+        return {
+            (restitution + other.restitution) / 2.0f,
+            (static_friction + other.static_friction) / 2.0f,
+            (dynamic_friction + other.dynamic_friction) / 2.0f,
+        };
+    }
+};
+
 class Rigidbody
 {
 public:
-    Rigidbody(std::shared_ptr<ICollider> collider, float mass, float inertia);
+    Rigidbody(
+        std::shared_ptr<ICollider> collider,
+        const MaterialProperties& material,
+        float mass,
+        float inertia
+    );
 
+    ICollider* Collider();
     const ICollider* Collider() const;
+    const MaterialProperties& Material() const;
     const Vec3& Position() const;
     const Vec3& Rotation() const;
     const Vec3& LinearVelocity() const;
     const Vec3& AngularVelocity() const;
 
+    float InverseMass() const;
+    float InverseInertia() const;
+
+    Vec3 GlobalPosition(const Vec3& local_pos) const;
+    Vec3 GlobalVelocity(const Vec3& local_pos) const;
+
     /**
      * @note @p new_position should be on a 2D plane (i.e., new_position.z == 0)
      */
     void SetPosition(const Vec3& new_position);
+    void MovePosition(const Vec3& offset);
 
     /**
      * @note rotation vectors are treated as 3D vectors with z-component.
@@ -63,13 +118,6 @@ public:
      *        This is identical to giving infinite mass and inertia.
      */
     void MakeObjectStatic();
-
-    /**
-     * @return The SFML representation of this object.
-     * 
-     * @note Translation and rotation are applied automatically.
-     */
-    sf::Shape& SFMLShape();
 
     /**
      * @return True if the distance between these objects
@@ -110,6 +158,7 @@ public:
 
 private:
     std::shared_ptr<ICollider> m_collider;
+    MaterialProperties m_material;
 
     DoF m_displacement;
     DoF m_velocity;
@@ -117,6 +166,7 @@ private:
 
     float m_inv_mass;
     float m_inv_inertia;
+
 };
 
 } // namespace physics

@@ -1,0 +1,135 @@
+#include "World.h"
+
+namespace physics
+{
+
+std::vector<std::shared_ptr<Rigidbody>>& World::Objects()
+{
+    return m_objects;
+}
+
+const std::vector<std::shared_ptr<Rigidbody>>& World::Objects() const
+{
+    return m_objects;
+}
+
+const std::vector<CollisionInfo>& World::Collisions() const
+{
+    return m_collisions;
+}
+
+void World::AddObject(std::shared_ptr<Rigidbody> object)
+{
+    m_objects.push_back(object);
+}
+
+void World::RemoveObject(const std::shared_ptr<Rigidbody>& object)
+{
+    m_objects.erase(std::find(m_objects.begin(), m_objects.end(), object));
+}
+
+std::shared_ptr<Rigidbody> World::PickObject(const Vec3& pos)
+{
+    // TODO: implement
+    return {};
+}
+
+void World::CheckCollisions()
+{
+    // Clear previous collision records.
+    m_collisions.clear();
+
+    // Iterate over all possible pairs.
+    const auto num_obj = m_objects.size();
+    for (int i = 0; i < num_obj; ++i)
+    {
+        for (int j = i + 1; j < num_obj; ++j)
+        {
+            // Record every collision occurrance.
+            if (auto collision = m_objects[i]->CheckCollision(*m_objects[j]))
+            {
+                m_collisions.push_back(collision.value());
+            }
+        }
+    }
+}
+
+void World::ResolveCollisions(float delta_time)
+{
+    for (const auto& collision : m_collisions)
+    {
+        // Shorthand notation for objects in contact.
+        auto& obj1 = collision.object1;
+        auto& obj2 = collision.object2;
+
+        // Choose the physical constants like friction coefficient.
+        const auto& mat1 = obj1->Material();
+        const auto& mat2 = obj2->Material();
+        const auto coef = mat1.Average(mat2);
+
+        // Get the inverse mass.
+        const auto inv_mass1 = obj1->InverseMass();
+        const auto inv_mass2 = obj2->InverseMass();
+
+        for (const auto& contact : collision.contacts)
+        {
+            // Local coordinates of the position where
+            // the collision impulse will be applied to.
+            const auto rel_impact_pos1 = contact - obj1->Position();
+            const auto rel_impact_pos2 = contact - obj2->Position();
+
+            // The global velocity of impact points.
+            const auto impact_vel1 = obj1->GlobalVelocity(rel_impact_pos1);
+            const auto impact_vel2 = obj2->GlobalVelocity(rel_impact_pos2);
+
+            // Relative impact velocity of object2 in object1's perspective.
+            const auto rel_impact_vel = impact_vel2 - impact_vel1;
+
+            // Relative impact velocity along collision normal.
+            const auto contact_vel = rel_impact_vel.Dot(collision.normal);
+
+            // Leave the objects if they already moving away.
+            // This prevents situation where we get locked inside a wall.
+            //
+            // ex)     wall <- A  <- B
+            //  A collides with the wall and gains velocity towards right.
+            //  But B comes in and pushes A back inside to the wall.
+            //  Now the velocity of A is headed towards the right side
+            //  and our impulse will have opposite effect: pushing A to the wall!
+            if (contact_vel > 0.0f)
+            {
+                continue;
+            }
+
+            // TODO: calculate correct impulse
+            const auto j = -(1 + coef.restitution) * contact_vel / (inv_mass1 + inv_mass2);
+            const auto impulse = collision.normal * j;
+
+            // Due to the law of action and reaction,
+            // the magnitude of impulse is same
+            // but the direction is opposite.
+            obj1->ApplyImpulse(rel_impact_pos1, -impulse, delta_time);
+            obj2->ApplyImpulse(rel_impact_pos2, impulse, delta_time);
+        }
+
+        // Perform positional correction.
+        // The total translation required to separate objects
+        // is distributed according to the ratio of inverse mass.
+        // This makes heavy objects stable, while light objects move more.
+        const auto required_translation = collision.normal * collision.penetration_depth;
+        const auto inv_mass_ratio = inv_mass1 / (inv_mass1 + inv_mass2);
+        obj1->MovePosition(-required_translation * inv_mass_ratio);
+        obj2->MovePosition(required_translation * (1.0f - inv_mass_ratio));
+    }
+}
+
+void World::Update(float delta_time)
+{
+    for (const auto& obj : m_objects)
+    {
+        obj->Update(delta_time);
+    }
+}
+
+
+} // namespace physics

@@ -26,4 +26,9 @@ sf::Shape& Circle::SFMLShape()
     return m_shape;
 }
 
+const sf::Shape& Circle::SFMLShape() const
+{
+    return m_shape;
+}
+
 } // namespace physics

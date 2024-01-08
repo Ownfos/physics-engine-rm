@@ -15,6 +15,8 @@ public:
     virtual float BoundaryRadius() const override;
     virtual ColliderType Type() const override;
     virtual sf::Shape& SFMLShape() override;
+    virtual const sf::Shape& SFMLShape() const override;
+    
 private:
     sf::CircleShape m_shape;
 };

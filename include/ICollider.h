@@ -36,6 +36,7 @@ public:
      * @return The SFML representation of this collider.
      */
     virtual sf::Shape& SFMLShape() = 0;
+    virtual const sf::Shape& SFMLShape() const = 0;
 };
 
 } // namespace physics

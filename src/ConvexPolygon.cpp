@@ -35,4 +35,9 @@ sf::Shape& ConvexPolygon::SFMLShape()
     return m_shape;
 }
 
+const sf::Shape& ConvexPolygon::SFMLShape() const
+{
+    return m_shape;
+}
+
 } // namespace physics

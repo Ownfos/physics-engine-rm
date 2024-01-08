@@ -17,6 +17,7 @@ public:
     virtual float BoundaryRadius() const override;
     virtual ColliderType Type() const override;
     virtual sf::Shape& SFMLShape() override;
+    virtual const sf::Shape& SFMLShape() const override;
     
 private:
     std::vector<Vec3> m_vertices;
