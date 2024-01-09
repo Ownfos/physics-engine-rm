@@ -1,4 +1,5 @@
 #include "World.h"
+#include <cassert>
 
 namespace physics
 {
@@ -16,6 +17,15 @@ const std::vector<std::shared_ptr<Rigidbody>>& World::Objects() const
 const std::vector<CollisionInfo>& World::Collisions() const
 {
     return m_collisions;
+}
+
+void World::ConfigurePositionalCorrection(float penetration_allowance, float correction_ratio)
+{
+    assert(penetration_allowance >= 0.0f);
+    assert(correction_ratio >= 0.0f && correction_ratio <= 1.0f);
+
+    m_penetration_allowance = penetration_allowance;
+    m_correction_ratio = correction_ratio;
 }
 
 void World::AddObject(std::shared_ptr<Rigidbody> object)
@@ -113,13 +123,24 @@ void World::ResolveCollisions(float delta_time)
         }
 
         // Perform positional correction.
-        // The total translation required to separate objects
-        // is distributed according to the ratio of inverse mass.
-        // This makes heavy objects stable, while light objects move more.
-        const auto required_translation = collision.normal * collision.penetration_depth;
-        const auto inv_mass_ratio = inv_mass1 / (inv_mass1 + inv_mass2);
-        obj1->MovePosition(-required_translation * inv_mass_ratio);
-        obj2->MovePosition(required_translation * (1.0f - inv_mass_ratio));
+        if (collision.penetration_depth > m_penetration_allowance)
+        {
+            const auto required_translation =
+                // The direction where we need separation.
+                collision.normal
+                // Allow some penetration for simulation stability.
+                * (collision.penetration_depth - m_penetration_allowance)
+                // Smoothly resolve overlapping issue.
+                // Again, for simulation stability.
+                * m_correction_ratio;
+            
+            // The total translation required to separate objects
+            // is distributed according to the ratio of inverse mass.
+            // This makes heavy objects stable, while light objects move more.
+            const auto inv_mass_ratio = inv_mass1 / (inv_mass1 + inv_mass2);
+            obj1->MovePosition(-required_translation * inv_mass_ratio);
+            obj2->MovePosition(required_translation * (1.0f - inv_mass_ratio));
+        }
     }
 }
 

@@ -9,26 +9,6 @@
 using namespace physics;
 
 /*
-rigidbody
-- collider
-    - shape ::= circle | polygon
-- displacement
-- velocity
-- material
-    - inverse mass
-    - inverse inertia
-    - static friction
-    - dynamic friction
-    - restitution
-
-collision: (rigidbody, rigidbody) -> collision_info
-
-collision_info
-- objects in contact
-- list of contact points (global coordinate)
-- penetration depth
-- contact normal (minimum translation vector)
-
 TODO:
 - implement soft positional correction
 - implement impulse resolution with angular momentum conservation
@@ -53,7 +33,7 @@ int main()
     auto world = World();
 
     auto bouncy_mat = MaterialProperties{
-        .restitution = 0.9f,
+        .restitution = 1.0f,
         .static_friction = 0.8f,
         .dynamic_friction = 0.5f
     };
