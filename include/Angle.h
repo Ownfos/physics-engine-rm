@@ -1,10 +1,12 @@
 #ifndef PHYSICS_ANGLE_H
 #define PHYSICS_ANGLE_H
 
+#include <numbers>
+
 namespace physics
 {
 
-constexpr float pi = 3.141592f;
+constexpr float pi = std::numbers::pi_v<float>;
 
 // Type aliases used to distinguish angle units.
 using Degree = float;
