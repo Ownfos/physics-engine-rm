@@ -96,7 +96,7 @@ void World::ResolveCollisions(float delta_time)
             const auto rel_impact_vel = impact_vel2 - impact_vel1;
 
             // Relative impact velocity along collision normal.
-            const auto contact_vel = rel_impact_vel.Dot(collision.normal);
+            const auto contact_normal_vel = rel_impact_vel.Dot(collision.normal);
 
             // Leave the objects if they already moving away.
             // This prevents situation where we get locked inside a wall.
@@ -106,18 +106,21 @@ void World::ResolveCollisions(float delta_time)
             //  But B comes in and pushes A back inside to the wall.
             //  Now the velocity of A is headed towards the right side
             //  and our impulse will have opposite effect: pushing A to the wall!
-            if (contact_vel > 0.0f)
+            if (contact_normal_vel > 0.0f)
             {
                 continue;
             }
 
             // TODO: calculate correct impulse
-            const auto j = -(1 + coef.restitution) * contact_vel / (inv_mass1 + inv_mass2);
+            const auto denominator =
+                inv_mass1 + inv_mass2
+                + rel_impact_pos1.Cross(collision.normal).SquaredMagnitude() * obj1->InverseInertia()
+                + rel_impact_pos2.Cross(collision.normal).SquaredMagnitude() * obj2->InverseInertia();
+            const auto j = -(1 + coef.restitution) * contact_normal_vel / denominator;
             const auto impulse = collision.normal * j;
 
             // Due to the law of action and reaction,
-            // the magnitude of impulse is same
-            // but the direction is opposite.
+            // the magnitude of impulse is same but the direction is opposite.
             obj1->ApplyImpulse(rel_impact_pos1, -impulse, delta_time);
             obj2->ApplyImpulse(rel_impact_pos2, impulse, delta_time);
         }

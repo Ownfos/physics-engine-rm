@@ -10,7 +10,6 @@ using namespace physics;
 
 /*
 TODO:
-- implement soft positional correction
 - implement impulse resolution with angular momentum conservation
 - implement circle-polygon collision check
 - implement polygon-polygon collision check
@@ -18,6 +17,7 @@ TODO:
 - implement damping
 - implement spring
 - implement object grapping using spring
+- add description about the math stuff used to derive equation for impulse magnitude...
 */
 
 int main()
