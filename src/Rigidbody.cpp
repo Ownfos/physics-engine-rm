@@ -63,6 +63,13 @@ float Rigidbody::InverseInertia() const
     return m_inv_inertia;
 }
 
+bool Rigidbody::IsPointInside(const Vec3& global_pos) const
+{
+    // Since collider doesn't know about our transform,
+    // we need to convert it to the corresponding local coordinate.
+    return Collider()->IsPointInside(LocalPosition(global_pos));
+}
+
 Vec3 Rigidbody::GlobalPosition(const Vec3& local_pos) const
 {
     // The offset of local point w.r.t. the
@@ -71,6 +78,16 @@ Vec3 Rigidbody::GlobalPosition(const Vec3& local_pos) const
     rotated_offset.Rotate(Rotation().z);
     
     return Position() + rotated_offset;
+}
+
+Vec3 Rigidbody::LocalPosition(const Vec3& global_pos) const
+{
+    // The offset of global point w.r.t. the
+    // object's origin in global coordinate (still rotated!).
+    auto rotated_offset = global_pos - Position();
+    rotated_offset.Rotate(-Rotation().z);
+    
+    return rotated_offset;
 }
 
 Vec3 Rigidbody::GlobalVelocity(const Vec3& local_pos) const
@@ -215,8 +232,79 @@ std::optional<CollisionInfo> CircleToCircleCollisionCheck(Rigidbody& circle1, Ri
 
 std::optional<CollisionInfo> CircleToPolygonCollisionCheck(Rigidbody& circle, Rigidbody& polygon)
 {
-    // TODO: implement
-    return {};
+    // Key idea: there are two cases where collision occurs.
+    // 1. circle's center is inside the polygon.
+    // 2. circle's center is outside the polygon,
+    //    but the distance is shorter than its radius.
+    const auto collider1 = dynamic_cast<const Circle*>(circle.Collider());
+    const auto collider2 = dynamic_cast<const ConvexPolygon*>(polygon.Collider());
+
+    // Precondition: the objects should have circle and polygon collider respectively.
+    assert(collider1 != nullptr);
+    assert(collider2 != nullptr);
+
+    // Record the objects under collision test.
+    //
+    // We assume that the circle is penetrating the polygon.
+    // This means that the collision normal we are calculating
+    // is the 'direction where the circle must move'.
+    //
+    // Since CollisionInfo treats 'normal' as the 'direction where object2 must move',
+    // circle goes to object2, while polygon goes to object1.
+    auto result = CollisionInfo{
+        .object1 = &polygon,
+        .object2 = &circle
+    };
+
+    // Case 1) check if the center of the circle is within the polygon.
+    const auto is_circle_inside_poly = polygon.IsPointInside(circle.Position());
+
+    // From now on, every calculation will be done under polygon's coordinate system.
+    const auto circle_radius = collider1->BoundaryRadius();
+    for (const auto& edge : collider2->Edges())
+    {
+        // The position of the circle's center w.r.t. the polygon.
+        const auto circle_rel_pos = polygon.LocalPosition(circle.Position());
+
+        // Case 2) check if the circle is close enough to the polygon's boundary.
+        const auto closest_point = edge.FindClosestPointOnLine(circle_rel_pos);
+        const auto edge_to_circle_center = circle_rel_pos - closest_point;
+        const auto dist_from_edge = edge_to_circle_center.Dot(edge.Normal());
+        const auto is_circle_touching_edge = dist_from_edge > 0.0f && dist_from_edge < circle_radius;
+
+        // If either condition for collision is satisfied,
+        // record the minimum penetration depth and the collision normal.
+        if (is_circle_inside_poly || is_circle_touching_edge)
+        {
+            // Calculate the penetration depth based on the boundary of the circle.
+            // Note that 'dist_from_edge' is a dot product w.r.t. the edge normal (headed outside!).
+            // This makes dist_from_edge negative on points inside the polygon.
+            const auto penetration_depth = circle_radius - dist_from_edge;
+
+            // If this is the first edge that satisfies condition,
+            // or the penetration depth was smaller than previous minimum
+            if (result.contacts.empty() || result.penetration_depth > penetration_depth)
+            {
+                // Overwrite previous record with the new minimum penetration case.
+                result.contacts.clear();
+                result.contacts.push_back(polygon.GlobalPosition(closest_point));
+                result.penetration_depth = penetration_depth;
+
+                // Don't forget to convert local direction to global direction!
+                result.normal = edge.Normal();
+                result.normal.Rotate(polygon.Rotation().z);
+            }
+        }
+    }
+
+    if (result.contacts.empty())
+    {
+        return {};
+    }
+    else
+    {
+        return result;
+    }
 }
 
 std::optional<CollisionInfo> PolygonToPolygonCollisionCheck(Rigidbody& polygon1, Rigidbody& polygon2)
@@ -283,9 +371,10 @@ void Rigidbody::Update(float delta_time)
     m_acceleration.angular = {};
 
     // Synchonize SFML representation with physical state.
+    // Note that SFML uses degree as unit, while our rotation is radian.
     auto& shape = m_collider->SFMLShape();
     shape.setPosition(m_displacement.linear.x, m_displacement.linear.y);
-    shape.setRotation(m_displacement.angular.z);
+    shape.setRotation(rad2deg(m_displacement.angular.z));
 }
 
 } // namespace physics

@@ -10,7 +10,6 @@ using namespace physics;
 
 /*
 TODO:
-- implement impulse resolution with angular momentum conservation
 - implement circle-polygon collision check
 - implement polygon-polygon collision check
 - implement friction
@@ -39,21 +38,23 @@ int main()
     };
 
     auto shape1 = std::make_shared<Circle>(10.0f);
-    auto object1 = std::make_shared<Rigidbody>(shape1, bouncy_mat, 10, 10);
+    auto object1 = std::make_shared<Rigidbody>(shape1, bouncy_mat, 10.0f, 10.0f);
     object1->SetPosition({100, 110});
     world.AddObject(object1);
 
     auto shape2 = std::make_shared<Circle>(20.0f);
-    auto object2 = std::make_shared<Rigidbody>(shape2, bouncy_mat, 0, 0);
+    auto object2 = std::make_shared<Rigidbody>(shape2, bouncy_mat, 0.0f, 0.0f);
     object2->SetPosition({100, 150});
     world.AddObject(object2);
 
-    // This comment block is kept as an example usage of ConvexPolygon class.
-    // auto object2 = Rigidbody(std::make_shared<ConvexPolygon>(std::vector<Vec3>{
-    //     {-50.0f, -50.0f},
-    //     {50.0f, -50.0f},
-    //     {50.0f, 50.0f}
-    // }));
+    auto shape3 = std::make_shared<ConvexPolygon>(std::vector<Vec3>{
+        {-50.0f, -50.0f},
+        {50.0f, -50.0f},
+        {50.0f, 50.0f}
+    });
+    auto object3 = std::make_shared<Rigidbody>(shape3, bouncy_mat, 20.0f, 20.0f);
+    object3->SetPosition({100, 150});
+    world.AddObject(object3);
 
     sf::Clock deltaClock;
     while (window.isOpen())
@@ -70,16 +71,26 @@ int main()
         ImGui::SFML::Update(window, delta_time);
         ImGui::Begin("test window");
         ImGui::Text("height: %f", object1->Position().y);
-        // if (ImGui::Button("push down"))
+        static float polygon_rotation = 0.0f;
+        if (ImGui::SliderFloat("polygon rotation", &polygon_rotation, 0.0f, 180.0f))
         {
-            // Approximate gravity
-            object1->ApplyImpulse({}, {0, 9.8f / object1->InverseMass()}, delta_time.asSeconds());
+            object3->SetRotation(deg2rad(polygon_rotation));
+        }
+        if (ImGui::IsMouseDown(ImGuiMouseButton_Left))
+        {
+            auto [x, y] = ImGui::GetMousePos();
+            ImGui::Text("mouse: (%f, %f)", x, y);
+            if (auto object = world.PickObject({x, y}))
+            {
+                ImGui::Text("rad: %f", object->Collider()->BoundaryRadius());
+                object->SetPosition({x, y});
+            }
         }
         ImGui::End();
 
 
         world.CheckCollisions();
-        world.ResolveCollisions(delta_time.asSeconds());
+        // world.ResolveCollisions(delta_time.asSeconds());
         world.Update(delta_time.asSeconds());
 
         window.clear(sf::Color::White);

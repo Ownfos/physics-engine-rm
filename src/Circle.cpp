@@ -21,6 +21,11 @@ ColliderType Circle::Type() const
     return ColliderType::Circle;
 }
 
+bool Circle::IsPointInside(const Vec3& point) const
+{
+    return point.Magnitude() <= BoundaryRadius();
+}
+
 sf::Shape& Circle::SFMLShape()
 {
     return m_shape;

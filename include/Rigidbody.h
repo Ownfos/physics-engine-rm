@@ -89,7 +89,25 @@ public:
     float InverseMass() const;
     float InverseInertia() const;
 
+    /**
+     * @param global_pos The point we want to test, which is
+     *              expressed in global coordinate system.
+     * @return True if the point resides within the collider,
+     *         considering object's transform.
+     */
+    bool IsPointInside(const Vec3& global_pos) const;
+
+    /**
+     * @brief Helper functions for transforming coordinates
+     *        between global and local coordinate systems.
+     */
     Vec3 GlobalPosition(const Vec3& local_pos) const;
+    Vec3 LocalPosition(const Vec3& global_pos) const;
+
+    /**
+     * @return The velocity of a point inside this rigidbody
+     *         expressed in global coordinate system.
+    */
     Vec3 GlobalVelocity(const Vec3& local_pos) const;
 
     /**

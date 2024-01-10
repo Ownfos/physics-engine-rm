@@ -40,7 +40,13 @@ void World::RemoveObject(const std::shared_ptr<Rigidbody>& object)
 
 std::shared_ptr<Rigidbody> World::PickObject(const Vec3& pos)
 {
-    // TODO: implement
+    for (const auto& obj : m_objects)
+    {
+        if (obj->IsPointInside(pos))
+        {
+            return obj;
+        }
+    }
     return {};
 }
 

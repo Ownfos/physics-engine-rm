@@ -134,8 +134,13 @@ void Vec3::Rotate(Radian angle)
 {
     const auto cos = std::cos(angle);
     const auto sin = std::sin(angle);
-    x = x * cos - y * sin;
-    y = y * cos + x * sin;
+
+    // Warning: directly assigning new value corrupts the calculation of y!
+    const auto new_x = x * cos - y * sin;
+    const auto new_y = y * cos + x * sin;
+
+    x = new_x;
+    y = new_y;
 }
 
 Vec3 Vec3::Projection(const Vec3& normalized_dir) const

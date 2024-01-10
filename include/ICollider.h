@@ -2,6 +2,7 @@
 #define PHYSICS_I_COLLIDER_H
 
 #include "SFML/Graphics/Shape.hpp"
+#include "Vec3.h"
 
 namespace physics
 {
@@ -31,6 +32,14 @@ public:
      * @note This value is used to dispatch collision detection function.
      */
     virtual ColliderType Type() const = 0;
+
+    /**
+     * @param point The point we want to test.
+     *              Coordinates must be expressed using
+     *              this collider's local coordinate system.
+     * @return True iif the point resides within this colider.
+     */
+    virtual bool IsPointInside(const Vec3& point) const = 0;
 
     /**
      * @return The SFML representation of this collider.

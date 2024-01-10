@@ -14,6 +14,7 @@ public:
 
     virtual float BoundaryRadius() const override;
     virtual ColliderType Type() const override;
+    virtual bool IsPointInside(const Vec3& point) const override;
     virtual sf::Shape& SFMLShape() override;
     virtual const sf::Shape& SFMLShape() const override;
     
