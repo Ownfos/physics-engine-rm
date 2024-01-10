@@ -99,7 +99,7 @@ Vec3 Vec3::Cross(const Vec3& other) const
     return {
         y * other.z - z * other.y,
         z * other.x - x * other.z,
-        x * other.y - y * other.z
+        x * other.y - y * other.x
     };
 }
 
