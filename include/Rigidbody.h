@@ -157,9 +157,14 @@ public:
      * @brief Assuming that a constant force will be applied on a local point @p impact_pos,
      *        accumulate linear and angular force corresponding to the @p impulse vector.
      * 
-     * @param rel_impact_pos Point of impact w.r.t. this object's coordinate.
+     * @param rel_impact_pos Point of impact w.r.t. this object's origin.
      * @param impulse Desired net change in momentum.
      * @param delta_time The time step of the following update step.
+     * 
+     * @warning The direction of @p impact and @p rel_impact_pos should be global!
+     *          Suppose we have a circle with radius = 1 and rotation = 90 degrees counter-clockwise.
+     *          If we want to push local point (1, 0) of that circle to the right,
+     *          @p rel_impact_pos should be (0, 1) and the direction of @p impact should be (1, 0),
      * 
      * @note J = ∫(F * dt) = F * Δt, if F is constant over time.
      */
