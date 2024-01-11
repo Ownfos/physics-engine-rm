@@ -10,7 +10,6 @@ using namespace physics;
 
 /*
 TODO:
-- implement circle-polygon collision check
 - implement polygon-polygon collision check
 - implement friction
 - implement damping
@@ -38,13 +37,15 @@ int main()
     };
 
     auto shape1 = std::make_shared<Circle>(10.0f);
-    auto object1 = std::make_shared<Rigidbody>(shape1, bouncy_mat, 10.0f, 10.0f);
+    auto object1 = std::make_shared<Rigidbody>(shape1, bouncy_mat, 10.0f, 50.0f);
     object1->SetPosition({100, 110});
+    object1->ApplyImpulse({}, {0,100}, 1);
+    object1->Update(1);
     world.AddObject(object1);
 
     auto shape2 = std::make_shared<Circle>(20.0f);
     auto object2 = std::make_shared<Rigidbody>(shape2, bouncy_mat, 0.0f, 0.0f);
-    object2->SetPosition({100, 150});
+    object2->SetPosition({150, 150});
     world.AddObject(object2);
 
     auto shape3 = std::make_shared<ConvexPolygon>(std::vector<Vec3>{
@@ -52,8 +53,8 @@ int main()
         {50.0f, -50.0f},
         {50.0f, 50.0f}
     });
-    auto object3 = std::make_shared<Rigidbody>(shape3, bouncy_mat, 20.0f, 20.0f);
-    object3->SetPosition({100, 150});
+    auto object3 = std::make_shared<Rigidbody>(shape3, bouncy_mat, 20.0f, 2000.0f);
+    object3->SetPosition({100, 200});
     world.AddObject(object3);
 
     sf::Clock deltaClock;
@@ -76,21 +77,42 @@ int main()
         {
             object3->SetRotation(deg2rad(polygon_rotation));
         }
-        if (ImGui::IsMouseDown(ImGuiMouseButton_Left))
+
+        static std::shared_ptr<Rigidbody> picked_object;
+        static Vec3 offset;
+        static float drag_force = 2;
+        static Vec3 obj_to_mouse;
+        ImGui::SliderFloat("drag force", &drag_force, 1, 20);
+        auto [x, y] = ImGui::GetMousePos();
+        if (ImGui::IsMouseClicked(ImGuiMouseButton_Left))
         {
-            auto [x, y] = ImGui::GetMousePos();
-            ImGui::Text("mouse: (%f, %f)", x, y);
-            if (auto object = world.PickObject({x, y}))
+            if (picked_object = world.PickObject({x, y}))
             {
-                ImGui::Text("rad: %f", object->Collider()->BoundaryRadius());
-                object->SetPosition({x, y});
+                offset = picked_object->LocalPosition({x, y});
+            }
+            ImGui::Text("clicked");
+        }
+        else if (ImGui::IsMouseDown(ImGuiMouseButton_Left))
+        {
+            ImGui::Text("mouse: (%f, %f)", x, y);
+            if (picked_object)
+            {
+                auto rotated_offset = offset;
+                rotated_offset.Rotate(picked_object->Rotation().z);
+                obj_to_mouse = Vec3{x, y} - picked_object->GlobalPosition(offset);
+                obj_to_mouse.Normalize();
+                picked_object->ApplyImpulse(rotated_offset, obj_to_mouse * drag_force, delta_time.asSeconds());
             }
         }
+        else if (ImGui::IsMouseReleased(ImGuiMouseButton_Left))
+        {
+            picked_object.reset();
+        }
+        ImGui::Text("pick offset: (%f, %f)", offset.x, offset.y);
         ImGui::End();
 
-
         world.CheckCollisions();
-        // world.ResolveCollisions(delta_time.asSeconds());
+        world.ResolveCollisions(delta_time.asSeconds());
         world.Update(delta_time.asSeconds());
 
         window.clear(sf::Color::White);
@@ -103,6 +125,14 @@ int main()
             shape.setOutlineColor(sf::Color::Black);
             shape.setOutlineThickness(2);
             window.draw(shape);
+        }
+
+        // Draw gizmo for object dragging.
+        if (picked_object)
+        {
+            window.draw(gizmo.Point({x, y}));
+            window.draw(gizmo.Point(picked_object->GlobalPosition(offset)));
+            window.draw(gizmo.Direction(picked_object->GlobalPosition(offset), obj_to_mouse, sf::Color::Blue));
         }
 
         // Draw contact points for all collisions.
