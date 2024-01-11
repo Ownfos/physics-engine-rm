@@ -1,4 +1,5 @@
 #include "Circle.h"
+#include "Angle.h"
 
 namespace physics
 {
@@ -24,6 +25,11 @@ ColliderType Circle::Type() const
 bool Circle::IsPointInside(const Vec3& point) const
 {
     return point.Magnitude() <= BoundaryRadius();
+}
+
+float Circle::Area() const
+{
+    return BoundaryRadius() * BoundaryRadius() * pi;
 }
 
 sf::Shape& Circle::SFMLShape()

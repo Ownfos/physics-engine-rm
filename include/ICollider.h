@@ -42,6 +42,11 @@ public:
     virtual bool IsPointInside(const Vec3& point) const = 0;
 
     /**
+     * @return The surface area of this collider shape.
+     */
+    virtual float Area() const = 0;
+
+    /**
      * @return The SFML representation of this collider.
      */
     virtual sf::Shape& SFMLShape() = 0;

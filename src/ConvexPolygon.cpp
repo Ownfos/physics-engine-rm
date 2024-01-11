@@ -63,6 +63,24 @@ bool ConvexPolygon::IsPointInside(const Vec3& point) const
     return true;
 }
 
+float ConvexPolygon::Area() const
+{
+    // Key idea: the magnitude of cross product between two vectors A and B
+    //           is twice the area of triangle OAB (O is the origin).
+    auto area = 0.0f;
+
+    auto num_vertices = m_vertices.size();
+    for (int i = 0; i < num_vertices; ++i)
+    {
+        const auto& curr = m_vertices[i];
+        const auto& next = m_vertices[(i + 1) % num_vertices];
+
+        area += curr.Cross(next).z / 2.0f;
+    }
+
+    return area;
+}
+
 sf::Shape& ConvexPolygon::SFMLShape()
 {
     return m_shape;
