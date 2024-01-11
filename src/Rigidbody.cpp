@@ -307,10 +307,123 @@ std::optional<CollisionInfo> CircleToPolygonCollisionCheck(Rigidbody& circle, Ri
     }
 }
 
+struct Penetration
+{
+    LineSegment edge;
+    float depth;
+
+    /**
+     * @brief Comparison by penetration depth.
+     * @note std::min requires this operator.
+     */
+    bool operator<(const Penetration& other) const
+    {
+        return depth < other.depth;
+    }
+};
+
+std::optional<Penetration> FindMinimumPenetration(Rigidbody& polygon1, Rigidbody& polygon2)
+{
+    const auto collider1 = dynamic_cast<const ConvexPolygon*>(polygon1.Collider());
+    const auto collider2 = dynamic_cast<const ConvexPolygon*>(polygon2.Collider());
+
+    // Precondition: the objects should have polygon colliders.
+    assert(collider1 != nullptr);
+    assert(collider2 != nullptr);
+
+    auto result = std::optional<Penetration>{};
+
+    // From now on, everything will be calculated under polygon1's coordinate system.
+    for (const auto& edge : collider1->Edges())
+    {
+        auto normal = edge.Normal();
+
+        // Projection of polygon1 onto the normal vector,
+        // assuming that the polygon is placed on the origin.
+        const auto projection1 = collider1->Projection(normal);
+
+        // Calculate the global direction of the edge's local normal vector.
+        normal.Rotate(polygon1.Rotation().z);
+
+        // This is the projection of relative displacement (p1 to p2) on the global normal vector.
+        // Since colliders uses their own local coordinate system,
+        // we need to manually adjust the difference in the objects' positions.
+        const auto offset_polygon2 = (polygon2.Position() - polygon1.Position()).Dot(normal);
+
+        // Calculate the direction of the global normal vector in polygon2's perspective.
+        normal.Rotate(-polygon2.Rotation().z);
+
+        // Projection of polygon2 onto the normal vector,
+        // assuming that the polygon is placed on the origin.
+        auto projection2 = collider2->Projection(normal);
+        projection2.min += offset_polygon2;
+        projection2.max += offset_polygon2;
+
+        // A separating axis implies no collision!
+        if (projection1.IsSeparated(projection2))
+        {
+            return {};
+        }
+
+        const auto overlap = projection1.OverlappingLength(projection2);
+        if (!result.has_value() || result->depth > overlap)
+        {
+            result.emplace(edge, overlap);
+        }
+    }
+
+    return result;
+}
+
 std::optional<CollisionInfo> PolygonToPolygonCollisionCheck(Rigidbody& polygon1, Rigidbody& polygon2)
 {
     // TODO: implement
-    return {};
+    // SAT => normal vector, penetration depth, incident & reference edge
+    // find most parallel edge from result.object2 and use it as incident edge
+    // clip incident edge w.r.t. the reference edge from penetration info (result.object1)
+
+    const auto penetration_1_to_2 = FindMinimumPenetration(polygon1, polygon2);
+    const auto penetration_2_to_1 = FindMinimumPenetration(polygon2, polygon1);
+
+    // We found an axis that can separate two objects,
+    // which means that there is no collision.
+    if (!penetration_1_to_2 || !penetration_2_to_1)
+    {
+        return {};
+    }
+
+    // Find and record the edge with minimum penetration depth
+    const auto& min_penetration = std::min(penetration_1_to_2.value(), penetration_2_to_1.value());
+    auto result = CollisionInfo{
+        .normal = min_penetration.edge.Normal(),
+        .penetration_depth = min_penetration.depth
+    };
+
+    // Set result.object1 as the object where min_enetration.edge came from.
+    // Note that result.normal should point the direction from object1 to object2!
+    if (penetration_1_to_2 < penetration_2_to_1)
+    {
+        result.object1 = &polygon1;
+        result.object2 = &polygon2;
+    }
+    else
+    {
+        result.object1 = &polygon2;
+        result.object2 = &polygon1;
+    }
+    result.normal.Rotate(result.object1->Rotation().z);
+
+    auto reference_edge = min_penetration.edge;
+    /*
+    auto incident_edge = FindMostParallelEdge(result.object2, reference_edge);
+
+    ...
+    */
+   // TODO: remove this line after visually validating normal vector direction...
+   result.contacts.push_back(result.object1->GlobalPosition(reference_edge.Start()));
+   result.contacts.push_back(result.object1->GlobalPosition(reference_edge.End()));
+
+    return result;
 }
 
 std::optional<CollisionInfo> Rigidbody::CheckCollision(Rigidbody& other)

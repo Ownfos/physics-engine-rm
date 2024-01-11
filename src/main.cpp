@@ -11,6 +11,7 @@ using namespace physics;
 /*
 TODO:
 - implement polygon-polygon collision check
+- separate collision detection logic to another file
 - implement friction
 - implement damping
 - implement spring
@@ -59,6 +60,14 @@ int main()
     }));
     object3->SetPosition({100, 200});
     world.AddObject(object3);
+
+    auto object4 = CreateObject(std::make_shared<ConvexPolygon>(std::vector<Vec3>{
+        {-40.0f, -50.0f},
+        {50.0f, -30.0f},
+        {20.0f, 50.0f}
+    }));
+    object4->SetPosition({300, 200});
+    world.AddObject(object4);
 
     sf::Clock deltaClock;
     while (window.isOpen())
@@ -114,7 +123,7 @@ int main()
 
         // Update
         world.CheckCollisions();
-        world.ResolveCollisions(delta_time.asSeconds());
+        // world.ResolveCollisions(delta_time.asSeconds());
         world.Update(delta_time.asSeconds());
 
 

@@ -101,4 +101,27 @@ const std::vector<LineSegment>& ConvexPolygon::Edges() const
     return m_edges;
 }
 
+ProjectionRange ConvexPolygon::Projection(const Vec3& local_direction) const
+{
+    auto result = ProjectionRange{};
+
+    auto is_first_entry = true;
+    for (const auto& vertex : m_vertices)
+    {
+        auto dot = vertex.Dot(local_direction);
+        if (is_first_entry || result.min > dot)
+        {
+            result.min = dot;
+        }
+        if (is_first_entry || result.max < dot)
+        {
+            result.max = dot;
+        }
+
+        is_first_entry = false;
+    }
+
+    return result;
+}
+
 } // namespace physics
