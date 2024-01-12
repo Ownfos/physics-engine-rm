@@ -62,9 +62,10 @@ int main()
     world.AddObject(object3);
 
     auto object4 = CreateObject(std::make_shared<ConvexPolygon>(std::vector<Vec3>{
-        {-40.0f, -50.0f},
-        {50.0f, -30.0f},
-        {20.0f, 50.0f}
+        {-100.0f, -100.0f},
+        {100.0f, -100.0f},
+        {100.0f, 100.0f},
+        {-100.0f, 100.0f}
     }));
     object4->SetPosition({300, 200});
     world.AddObject(object4);
@@ -96,7 +97,7 @@ int main()
         {
             if (picked_object = world.PickObject({x, y}))
             {
-                offset = picked_object->LocalPosition({x, y});
+                offset = picked_object->GlobalToLocal({x, y});
             }
         }
         else if (ImGui::IsMouseDown(ImGuiMouseButton_Left))
@@ -105,7 +106,7 @@ int main()
             {
                 auto rotated_offset = offset;
                 rotated_offset.Rotate(picked_object->Rotation().z);
-                obj_to_mouse = Vec3{x, y} - picked_object->GlobalPosition(offset);
+                obj_to_mouse = Vec3{x, y} - picked_object->LocalToGlobal(offset);
                 obj_to_mouse.Normalize();
 
                 // Prevent division by zero if we try to drag a static object.
@@ -123,7 +124,7 @@ int main()
 
         // Update
         world.CheckCollisions();
-        // world.ResolveCollisions(delta_time.asSeconds());
+        world.ResolveCollisions(delta_time.asSeconds());
         world.Update(delta_time.asSeconds());
 
 
@@ -144,8 +145,8 @@ int main()
         if (picked_object)
         {
             window.draw(gizmo.Point({x, y}));
-            window.draw(gizmo.Point(picked_object->GlobalPosition(offset)));
-            window.draw(gizmo.Direction(picked_object->GlobalPosition(offset), obj_to_mouse, sf::Color::Blue));
+            window.draw(gizmo.Point(picked_object->LocalToGlobal(offset)));
+            window.draw(gizmo.Direction(picked_object->LocalToGlobal(offset), obj_to_mouse, sf::Color::Blue));
         }
 
         // Draw contact points for all collisions.
