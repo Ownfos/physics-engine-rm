@@ -4,6 +4,7 @@
 #include "ICollider.h"
 #include "CollisionInfo.h"
 #include "Vec3.h"
+#include "LineSegment.h"
 #include "Angle.h"
 #include <memory>
 #include <optional>
@@ -101,8 +102,10 @@ public:
      * @brief Helper functions for transforming coordinates
      *        between global and local coordinate systems.
      */
-    Vec3 GlobalPosition(const Vec3& local_pos) const;
-    Vec3 LocalPosition(const Vec3& global_pos) const;
+    Vec3 LocalToGlobal(const Vec3& local_pos) const;
+    Vec3 GlobalToLocal(const Vec3& global_pos) const;
+    LineSegment LocalToGlobal(const LineSegment& local_edge) const;
+    LineSegment GlobalToLocal(const LineSegment& global_edge) const;
 
     /**
      * @return The velocity of a point inside this rigidbody

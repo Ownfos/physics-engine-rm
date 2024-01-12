@@ -67,10 +67,10 @@ bool Rigidbody::IsPointInside(const Vec3& global_pos) const
 {
     // Since collider doesn't know about our transform,
     // we need to convert it to the corresponding local coordinate.
-    return Collider()->IsPointInside(LocalPosition(global_pos));
+    return Collider()->IsPointInside(GlobalToLocal(global_pos));
 }
 
-Vec3 Rigidbody::GlobalPosition(const Vec3& local_pos) const
+Vec3 Rigidbody::LocalToGlobal(const Vec3& local_pos) const
 {
     // The offset of local point w.r.t. the
     // object's origin in global coordinate.
@@ -80,7 +80,7 @@ Vec3 Rigidbody::GlobalPosition(const Vec3& local_pos) const
     return Position() + rotated_offset;
 }
 
-Vec3 Rigidbody::LocalPosition(const Vec3& global_pos) const
+Vec3 Rigidbody::GlobalToLocal(const Vec3& global_pos) const
 {
     // The offset of global point w.r.t. the
     // object's origin in global coordinate (still rotated!).
@@ -88,6 +88,22 @@ Vec3 Rigidbody::LocalPosition(const Vec3& global_pos) const
     rotated_offset.Rotate(-Rotation().z);
     
     return rotated_offset;
+}
+
+LineSegment Rigidbody::LocalToGlobal(const LineSegment& local_edge) const
+{
+    return {
+        LocalToGlobal(local_edge.Start()),
+        LocalToGlobal(local_edge.End())
+    };
+}
+
+LineSegment Rigidbody::GlobalToLocal(const LineSegment& global_edge) const
+{
+    return {
+        GlobalToLocal(global_edge.Start()),
+        GlobalToLocal(global_edge.End())
+    };
 }
 
 Vec3 Rigidbody::GlobalVelocity(const Vec3& local_pos) const
@@ -264,7 +280,7 @@ std::optional<CollisionInfo> CircleToPolygonCollisionCheck(Rigidbody& circle, Ri
     for (const auto& edge : collider2->Edges())
     {
         // The position of the circle's center w.r.t. the polygon.
-        const auto circle_rel_pos = polygon.LocalPosition(circle.Position());
+        const auto circle_rel_pos = polygon.GlobalToLocal(circle.Position());
 
         // Case 2) check if the circle is close enough to the polygon's boundary.
         const auto closest_point = edge.FindClosestPointOnLine(circle_rel_pos);
@@ -287,7 +303,7 @@ std::optional<CollisionInfo> CircleToPolygonCollisionCheck(Rigidbody& circle, Ri
             {
                 // Overwrite previous record with the new minimum penetration case.
                 result.contacts.clear();
-                result.contacts.push_back(polygon.GlobalPosition(closest_point));
+                result.contacts.push_back(polygon.LocalToGlobal(closest_point));
                 result.penetration_depth = penetration_depth;
 
                 // Don't forget to convert local direction to global direction!
@@ -311,6 +327,7 @@ struct Penetration
 {
     LineSegment edge;
     float depth;
+    int involved_vertex_index;
 
     /**
      * @brief Comparison by penetration depth.
@@ -365,14 +382,78 @@ std::optional<Penetration> FindMinimumPenetration(Rigidbody& polygon1, Rigidbody
             return {};
         }
 
-        const auto overlap = projection1.OverlappingLength(projection2);
+        const auto overlap = projection1.max - projection2.min;
         if (!result.has_value() || result->depth > overlap)
         {
-            result.emplace(edge, overlap);
+            result.emplace(edge, overlap, projection2.min_vertex_index);
         }
     }
 
+    // If the algorithm is valid, penetration depth should always be positive.
+    assert(result->depth > 0.0f);
+
     return result;
+}
+
+LineSegment FindMostParallelCollisionEdge(const Rigidbody& polygon, const LineSegment& global_direction, int involved_vertex_index)
+{
+    const auto collider = dynamic_cast<const ConvexPolygon*>(polygon.Collider());
+    
+    // Precondition: the object should have polygon collider.
+    assert(collider != nullptr);
+
+    // Get two edges that contain the vertex involved in collision.
+    // Note: Given vertex index x, the edges we need is edges[x] and edges[x - 1].
+    //       To prevent x - 1 from going negative, add and modulo edges.size() was used.
+    const auto& edges = collider->Edges();
+    const auto edge1 = polygon.LocalToGlobal(edges[involved_vertex_index]);
+    const auto edge2 = polygon.LocalToGlobal(edges[(involved_vertex_index + edges.size() - 1) % edges.size()]);
+
+    // Choose the one with tangent direction more similar to the given direction vector.
+    // Note: std::abs() was used to handle edge directions parallel but opposite.
+    if (std::abs(edge1.Tangent().Dot(global_direction.Tangent()))
+        > std::abs(edge2.Tangent().Dot(global_direction.Tangent())))
+    {
+        return edge1;
+    }
+    else
+    {
+        return edge2;
+    }
+}
+
+/**
+ * @brief Find a subrange of @p incident_edge that resides within
+ *        the range defined by @p reference_edge.
+ * 
+ * @param incident_edge A line segment we want to clip.
+ * @param reference_edge A line segment that defines the clipping region.
+ * 
+ * @warning Both parameters should use global coordinate system.
+ * 
+ * @note 'clipping region' refers to an infinite rectangle
+ *        between start end end point of the @p reference_edge.
+ */
+LineSegment ClipEdge(const LineSegment& incident_edge, const LineSegment& reference_edge)
+{
+    const auto proj_start = (incident_edge.Start() - reference_edge.Start()).Dot(reference_edge.Tangent());
+    const auto proj_end = (incident_edge.End() - reference_edge.Start()).Dot(reference_edge.Tangent());
+
+    const auto dividing_point = [&, max = reference_edge.Length()](float projection){
+        // Limit the position to the region between the reference edge's end points.
+        const auto clipped_projection = std::clamp(projection, 0.0f, max);
+
+        // Divide the incident edge with given boundary condition:
+        //   proj_start --> incident_edge.Start()
+        //   proj_end --> incident_edge.End()
+        const auto rel_pos = (clipped_projection - proj_start) / (proj_end - proj_start);
+        return incident_edge.Start() + rel_pos * (incident_edge.End() - incident_edge.Start());
+    };
+
+    return {
+        dividing_point(proj_start),
+        dividing_point(proj_end)
+    };
 }
 
 std::optional<CollisionInfo> PolygonToPolygonCollisionCheck(Rigidbody& polygon1, Rigidbody& polygon2)
@@ -392,15 +473,14 @@ std::optional<CollisionInfo> PolygonToPolygonCollisionCheck(Rigidbody& polygon1,
         return {};
     }
 
-    // Find and record the edge with minimum penetration depth
+    // Find the edge with minimum penetration depth.
     const auto& min_penetration = std::min(penetration_1_to_2.value(), penetration_2_to_1.value());
-    auto result = CollisionInfo{
-        .normal = min_penetration.edge.Normal(),
-        .penetration_depth = min_penetration.depth
-    };
 
     // Set result.object1 as the object where min_enetration.edge came from.
     // Note that result.normal should point the direction from object1 to object2!
+    auto result = CollisionInfo{
+        .penetration_depth = min_penetration.depth
+    };
     if (penetration_1_to_2 < penetration_2_to_1)
     {
         result.object1 = &polygon1;
@@ -411,18 +491,24 @@ std::optional<CollisionInfo> PolygonToPolygonCollisionCheck(Rigidbody& polygon1,
         result.object1 = &polygon2;
         result.object2 = &polygon1;
     }
-    result.normal.Rotate(result.object1->Rotation().z);
 
-    auto reference_edge = min_penetration.edge;
-    /*
-    auto incident_edge = FindMostParallelEdge(result.object2, reference_edge);
+    // Since edges use local coordinate system of each object,
+    // convert the start and end points to global coordinate.
+    auto reference_edge = result.object1->LocalToGlobal(min_penetration.edge);
+    auto incident_edge = FindMostParallelCollisionEdge(*result.object2, reference_edge, min_penetration.involved_vertex_index);
+    auto penetrating_segment = ClipEdge(incident_edge, reference_edge);
 
-    ...
-    */
-   // TODO: remove this line after visually validating normal vector direction...
-   result.contacts.push_back(result.object1->GlobalPosition(reference_edge.Start()));
-   result.contacts.push_back(result.object1->GlobalPosition(reference_edge.End()));
-
+    // Only choose the end points inside other polygon's collider.
+    for (auto end_point : {penetrating_segment.Start(), penetrating_segment.End()})
+    {
+        // Note: points outside a polygon have positive dot product w.r.t. the edge normal.
+        if ((end_point - reference_edge.Start()).Dot(reference_edge.Normal()) < 0.0f)
+        {
+            result.contacts.push_back(end_point);
+        }
+    }
+    result.normal = reference_edge.Normal();
+    
     return result;
 }
 
