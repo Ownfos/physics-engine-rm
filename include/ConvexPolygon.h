@@ -17,19 +17,17 @@ struct ProjectionRange
     float min;
     float max;
 
+    // These are the indices of vertices that
+    // contributed to minimum or maximum projection value.
+    // In context of collision detection,
+    // this is the the index of the vertex most relavant in collision,
+    // such as a penetration point.
+    int min_vertex_index;
+    int max_vertex_index;
+
     bool IsSeparated(const ProjectionRange& other) const
     {
         return min > other.max || max < other.min;
-    }
-
-    float OverlappingLength(const ProjectionRange& other) const
-    {
-        if (IsSeparated(other)) return 0.0f;
-
-        return std::min(
-            std::abs(other.max - min), // Case 1) overlap on the left
-            std::abs(max - other.min)  // Case 2) overlap on the right
-        );
     }
 };
 

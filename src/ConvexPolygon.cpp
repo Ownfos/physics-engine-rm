@@ -106,16 +106,18 @@ ProjectionRange ConvexPolygon::Projection(const Vec3& local_direction) const
     auto result = ProjectionRange{};
 
     auto is_first_entry = true;
-    for (const auto& vertex : m_vertices)
+    for (int i = 0; i < m_vertices.size(); ++i)
     {
-        auto dot = vertex.Dot(local_direction);
+        auto dot = m_vertices[i].Dot(local_direction);
         if (is_first_entry || result.min > dot)
         {
             result.min = dot;
+            result.min_vertex_index = i;
         }
         if (is_first_entry || result.max < dot)
         {
             result.max = dot;
+            result.max_vertex_index = i;
         }
 
         is_first_entry = false;
