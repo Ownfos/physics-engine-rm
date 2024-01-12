@@ -10,6 +10,7 @@ LineSegment::LineSegment(const Vec3& start, const Vec3& end)
     , m_tangent(end - start)
     // This cross product creates a perpendicular vector to the right side.
     , m_normal(m_tangent.Cross(Vec3{.z = 1}))
+    , m_length(m_tangent.Magnitude())
 {
     m_tangent.Normalize();
     m_normal.Normalize();
@@ -33,6 +34,11 @@ const Vec3& LineSegment::Tangent() const
 const Vec3& LineSegment::Normal() const
 {
     return m_normal;
+}
+
+float LineSegment::Length() const
+{
+    return m_length;
 }
 
 Vec3 LineSegment::FindClosestPointOnLine(const Vec3& external_point) const

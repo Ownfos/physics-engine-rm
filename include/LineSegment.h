@@ -9,6 +9,7 @@ namespace physics
 class LineSegment
 {
 public:
+    LineSegment() = default;
     LineSegment(const Vec3& start, const Vec3& end);
 
     const Vec3& Start() const;
@@ -26,6 +27,8 @@ public:
      */
     const Vec3& Normal() const;
 
+    float Length() const;
+
     /**
      * @return The point on this line segment with
      *         shortest distance from given point.
@@ -42,6 +45,7 @@ private:
     Vec3 m_end;
     Vec3 m_tangent;
     Vec3 m_normal;
+    float m_length;
 };
 
 } // namespace physics
