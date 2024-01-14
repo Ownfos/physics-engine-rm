@@ -83,6 +83,10 @@ int main()
         }
 
         auto delta_time = deltaClock.restart();
+
+        static float time_scale = 1.0f;
+        auto time_step = delta_time.asSeconds() * time_scale;
+
         ImGui::SFML::Update(window, delta_time);
 
         // UI
@@ -92,6 +96,7 @@ int main()
         static float drag_force = 2;
         static Vec3 obj_to_mouse;
         ImGui::SliderFloat("drag force", &drag_force, 1, 10);
+        ImGui::SliderFloat("time scale", &time_scale, 0.01f, 1.0f);
         auto [x, y] = ImGui::GetMousePos();
         if (ImGui::IsMouseClicked(ImGuiMouseButton_Left))
         {
@@ -112,7 +117,7 @@ int main()
                 // Prevent division by zero if we try to drag a static object.
                 if (picked_object->InverseMass() > 0.0f)
                 {
-                    picked_object->ApplyImpulse(rotated_offset, obj_to_mouse * drag_force / picked_object->InverseMass(), delta_time.asSeconds());
+                    picked_object->ApplyImpulse(rotated_offset, obj_to_mouse * drag_force / picked_object->InverseMass(), time_step);
                 }
             }
         }
@@ -124,8 +129,8 @@ int main()
 
         // Update
         world.CheckCollisions();
-        world.ResolveCollisions(delta_time.asSeconds());
-        world.Update(delta_time.asSeconds());
+        world.ResolveCollisions(time_step);
+        world.Update(time_step);
 
 
         // Render

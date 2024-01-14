@@ -115,48 +115,71 @@ std::optional<CollisionInfo> Circle::CheckCollisionAccept(const ConvexPolygon* o
     const auto is_circle_inside_poly = other->IsPointInside(circle_rel_pos);
 
     // From now on, every calculation will be done under polygon's coordinate system.
-    auto result = CollisionInfo{};
+    auto result = std::optional<CollisionInfo>{};
     const auto circle_radius = BoundaryRadius();
     for (const auto& edge : other->Edges())
     {
-        // Case 2) check if the circle is close enough to the polygon's boundary.
+        // Case 2) check if the circle is close enough to the polygon's boundary,
+        //         but the circle's center is still outside of the polygon.
         const auto closest_point = edge.FindClosestPointOnLine(circle_rel_pos);
         const auto edge_to_circle_center = circle_rel_pos - closest_point;
-        const auto dist_from_edge = edge_to_circle_center.Dot(edge.Normal());
-        const auto is_circle_touching_edge = dist_from_edge > 0.0f && dist_from_edge < circle_radius;
+        const auto dist_from_edge = edge_to_circle_center.Magnitude();
+
+        const auto is_circle_outside_edge = edge_to_circle_center.Dot(edge.Normal()) > 0.0f;
+        const auto is_circle_touching_edge = is_circle_outside_edge && dist_from_edge < circle_radius;
+
 
         // If either condition for collision is satisfied,
         // record the minimum penetration depth and the collision normal.
         if (is_circle_inside_poly || is_circle_touching_edge)
         {
-            // Calculate the penetration depth based on the boundary of the circle.
-            // Note that 'dist_from_edge' is a dot product w.r.t. the edge normal (headed outside!).
-            // This makes dist_from_edge negative on points inside the polygon.
-            const auto penetration_depth = circle_radius - dist_from_edge;
 
-            // If this is the first edge that satisfies condition,
-            // or the penetration depth was smaller than previous minimum
-            if (result.contacts.empty() || result.penetration_depth > penetration_depth)
+            // Now calculate the normal and penetration depth,
+            // depending on the collision condition (either case 1 or case 2).
+            auto collision = CollisionInfo{};
+            if (is_circle_inside_poly)
             {
-                // Overwrite previous record with the new minimum penetration case.
-                result.contacts.clear();
-                result.contacts.push_back(other->Transform().GlobalPosition(closest_point));
-                result.penetration_depth = penetration_depth;
+                // Move the circle out of the polygon along edge normal.
+                collision.normal = other->Transform().GlobalDirection(edge.Normal());
 
-                // Don't forget to convert local direction to global direction!
-                result.normal = other->Transform().GlobalDirection(edge.Normal());
+                // Choose the circle's center as impact point.
+                // Reason for not using circle's boundary point:
+                // 1. Impact point becomes noncontinuous on the border of the polygon.
+                // 2. The boundary point might be on the outside of the polygon,
+                //    in case the circle is way larger than the other.
+                collision.contacts.push_back(Transform().Position());
+
+                // However, penetration depth is the minimum translation distance
+                // required to separate two objects.
+                // Therefore, this must take radius into account.
+                collision.penetration_depth = circle_radius + dist_from_edge;
+            }
+            else
+            {
+                // When circle collides with the corner, especially on a sharp one,
+                // edge normal can greatly differ depending on the selected edge.
+                // To prevent such noncontinuous collision normal,
+                // we use edge_to_circle_center instead of edge normal.
+                collision.normal = other->Transform().GlobalDirection(edge_to_circle_center);
+                collision.normal.Normalize();
+
+                // Use the point on the edge, closest to the circle's center, as impact point.
+                collision.contacts.push_back(other->Transform().GlobalPosition(closest_point));
+
+                // The circle barely touches the polygon when dist_from_edge == circle_radius
+                // and in this case, circle_radius is always greater than dist_from_edge.
+                collision.penetration_depth = circle_radius - dist_from_edge;
+            }
+
+            // Keep recording the collision information with minimum penetration depth.
+            if (!result.has_value() || result->penetration_depth > collision.penetration_depth)
+            {
+                result = collision;
             }
         }
     }
 
-    if (result.contacts.empty())
-    {
-        return {};
-    }
-    else
-    {
-        return result;
-    }
+    return result;
 }
 
 } // namespace physics
