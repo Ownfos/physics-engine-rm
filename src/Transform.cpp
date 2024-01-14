@@ -21,9 +21,19 @@ void Transform::SetPosition(const Vec3& new_position)
     m_position = new_position;
 }
 
+void Transform::AddPosition(const Vec3& offset)
+{
+    SetPosition(Position() + offset);
+}
+
 void Transform::SetRotation(Radian new_rotation)
 {
     m_rotation = new_rotation;
+}
+
+void Transform::AddRotation(Radian offset)
+{
+    SetRotation(Rotation() + offset);
 }
 
 Vec3 Transform::GlobalDirection(const Vec3& local_dir) const

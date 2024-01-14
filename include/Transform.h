@@ -18,7 +18,10 @@ public:
      * @warning @p new_position should be on a 2D plane (i.e., new_position.z == 0)
      */
     void SetPosition(const Vec3& new_position);
+    void AddPosition(const Vec3& offset);
+
     void SetRotation(Radian new_rotation);
+    void AddRotation(Radian offset);
 
     /**
      * @brief Helper functions for transforming coordinates
