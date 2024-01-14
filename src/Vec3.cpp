@@ -143,6 +143,14 @@ void Vec3::Rotate(Radian angle)
     y = new_y;
 }
 
+Vec3 Vec3::Rotated(Radian angle) const
+{
+    auto result = *this;
+    result.Rotate(angle);
+    
+    return result;
+}
+
 Vec3 Vec3::Projection(const Vec3& normalized_dir) const
 {
     return normalized_dir * Dot(normalized_dir);

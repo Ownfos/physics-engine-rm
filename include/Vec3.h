@@ -42,6 +42,7 @@ struct Vec3
     void Normalize();
 
     void Rotate(Radian angle);
+    Vec3 Rotated(Radian angle) const;
 
     Vec3 Projection(const Vec3& normalized_dir) const;
 };
