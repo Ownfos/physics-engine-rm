@@ -87,7 +87,7 @@ void World::ResolveCollisions(float delta_time)
         const auto inv_mass1 = obj1->InverseMass();
         const auto inv_mass2 = obj2->InverseMass();
 
-        for (const auto& contact : collision.contacts)
+        for (const auto& contact : collision.info.contacts)
         {
             // Local coordinates of the position where
             // the collision impulse will be applied to.
@@ -102,7 +102,8 @@ void World::ResolveCollisions(float delta_time)
             const auto rel_impact_vel = impact_vel2 - impact_vel1;
 
             // Relative impact velocity along collision normal.
-            const auto contact_normal_vel = rel_impact_vel.Dot(collision.normal);
+            auto collision_normal = collision.info.normal;
+            const auto contact_normal_vel = rel_impact_vel.Dot(collision_normal);
 
             // Leave the objects if they already moving away.
             // This prevents situation where we get locked inside a wall.
@@ -120,10 +121,10 @@ void World::ResolveCollisions(float delta_time)
             // TODO: calculate correct impulse
             const auto denominator =
                 inv_mass1 + inv_mass2
-                + rel_impact_pos1.Cross(collision.normal).SquaredMagnitude() * obj1->InverseInertia()
-                + rel_impact_pos2.Cross(collision.normal).SquaredMagnitude() * obj2->InverseInertia();
+                + rel_impact_pos1.Cross(collision_normal).SquaredMagnitude() * obj1->InverseInertia()
+                + rel_impact_pos2.Cross(collision_normal).SquaredMagnitude() * obj2->InverseInertia();
             const auto j = -(1 + coef.restitution) * contact_normal_vel / denominator;
-            const auto impulse = collision.normal * j;
+            const auto impulse = collision_normal * j;
 
             // Due to the law of action and reaction,
             // the magnitude of impulse is same but the direction is opposite.
@@ -132,13 +133,13 @@ void World::ResolveCollisions(float delta_time)
         }
 
         // Perform positional correction.
-        if (collision.penetration_depth > m_penetration_allowance)
+        if (collision.info.penetration_depth > m_penetration_allowance)
         {
             const auto required_translation =
                 // The direction where we need separation.
-                collision.normal
+                collision.info.normal
                 // Allow some penetration for simulation stability.
-                * (collision.penetration_depth - m_penetration_allowance)
+                * (collision.info.penetration_depth - m_penetration_allowance)
                 // Smoothly resolve overlapping issue.
                 // Again, for simulation stability.
                 * m_correction_ratio;

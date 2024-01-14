@@ -28,6 +28,21 @@ const ICollider* Rigidbody::Collider() const
     return m_collider.get();
 }
 
+const physics::Transform& Rigidbody::Transform() const
+{
+    return Collider()->Transform();
+}
+
+physics::Transform& Rigidbody::Transform()
+{
+    return Collider()->Transform();
+}
+
+MaterialProperties& Rigidbody::Material()
+{
+    return m_material;
+}
+
 const MaterialProperties& Rigidbody::Material() const
 {
     return m_material;
@@ -51,16 +66,6 @@ float Rigidbody::InverseMass() const
 float Rigidbody::InverseInertia() const
 {
     return m_inv_inertia;
-}
-
-const physics::Transform& Rigidbody::Transform() const
-{
-    return Collider()->Transform();
-}
-
-physics::Transform& Rigidbody::Transform()
-{
-    return Collider()->Transform();
 }
 
 bool Rigidbody::IsPointInside(const Vec3& global_pos) const
@@ -148,9 +153,7 @@ std::optional<CollisionPair> Rigidbody::CheckCollision(Rigidbody& other)
         return CollisionPair{
             .object1 = this,
             .object2 = &other,
-            .contacts = result->contacts,
-            .normal = result->normal,
-            .penetration_depth = result->penetration_depth
+            .info = result.value()
         };
     }
     else

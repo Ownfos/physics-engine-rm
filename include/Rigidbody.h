@@ -2,7 +2,6 @@
 #define PHYSICS_RIGIDBODY_H
 
 #include "ICollider.h"
-#include "CollisionInfo.h"
 #include "Vec3.h"
 #include "LineSegment.h"
 #include "Angle.h"
@@ -69,6 +68,19 @@ struct MaterialProperties
     }
 };
 
+// Forward declaration for CollisionPair definition.
+class Rigidbody;
+
+struct CollisionPair
+{
+    // Objects who collided with each other.
+    Rigidbody* object1;
+    Rigidbody* object2;
+
+    // Contact points, normal, and penetration depth.
+    CollisionInfo info;
+};
+
 class Rigidbody
 {
 public:
@@ -81,12 +93,15 @@ public:
 
     ICollider* Collider();
     const ICollider* Collider() const;
+
+    physics::Transform& Transform();
+    const physics::Transform& Transform() const;
+
+    MaterialProperties& Material();
     const MaterialProperties& Material() const;
+
     const Vec3& LinearVelocity() const;
     const Vec3& AngularVelocity() const;
-
-    const physics::Transform& Transform() const;
-    physics::Transform& Transform();
 
     float InverseMass() const;
     float InverseInertia() const;

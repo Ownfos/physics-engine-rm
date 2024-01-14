@@ -156,10 +156,10 @@ int main()
         // Draw contact points for all collisions.
         for (const auto& collision : world.Collisions())
         {
-            for (const auto& contact : collision.contacts)
+            for (const auto& contact : collision.info.contacts)
             {
                 window.draw(gizmo.Point(contact, sf::Color::Red));
-                window.draw(gizmo.Direction(contact, collision.normal));
+                window.draw(gizmo.Direction(contact, collision.info.normal));
             }
         }
 
