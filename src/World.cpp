@@ -118,13 +118,18 @@ void World::ResolveCollisions(float delta_time)
                 continue;
             }
 
-            // TODO: calculate correct impulse
+            // TODO: add description on  how this equation was derived...
             const auto denominator =
                 inv_mass1 + inv_mass2
                 + rel_impact_pos1.Cross(collision_normal).SquaredMagnitude() * obj1->InverseInertia()
                 + rel_impact_pos2.Cross(collision_normal).SquaredMagnitude() * obj2->InverseInertia();
             const auto j = -(1 + coef.restitution) * contact_normal_vel / denominator;
-            const auto impulse = collision_normal * j;
+
+            // Reason for dividing impulse for this contact point by contact size:
+            //   We might have multiple impact points per collision!
+            //   To approximate total energy conservation,
+            //   the average impulse of all local impulse per impact point must be used.
+            const auto impulse = collision_normal * j / collision.info.contacts.size();
 
             // Due to the law of action and reaction,
             // the magnitude of impulse is same but the direction is opposite.
