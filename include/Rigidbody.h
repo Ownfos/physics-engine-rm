@@ -82,8 +82,6 @@ public:
     ICollider* Collider();
     const ICollider* Collider() const;
     const MaterialProperties& Material() const;
-    const Vec3& Position() const;
-    Radian Rotation() const;
     const Vec3& LinearVelocity() const;
     const Vec3& AngularVelocity() const;
 
@@ -106,17 +104,6 @@ public:
      *         expressed in global coordinate system.
     */
     Vec3 GlobalVelocity(const Vec3& local_pos) const;
-
-    /**
-     * @note @p new_position should be on a 2D plane (i.e., new_position.z == 0)
-     */
-    void SetPosition(const Vec3& new_position);
-    void MovePosition(const Vec3& offset);
-
-    /**
-     * @note rotation vectors are treated as 3D vectors with z-component.
-     */
-    void SetRotation(Radian new_rotation);
 
     /**
      * @note @p new_mass should not be negative.
@@ -180,7 +167,6 @@ private:
     std::shared_ptr<ICollider> m_collider;
     MaterialProperties m_material;
 
-    DoF m_displacement;
     DoF m_velocity;
     DoF m_acceleration;
 

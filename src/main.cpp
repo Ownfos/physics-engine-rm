@@ -47,11 +47,11 @@ int main()
     auto world = World();
 
     auto object1 = CreateObject(std::make_shared<Circle>(10.0f));
-    object1->SetPosition({100, 110});
+    object1->Transform().SetPosition({100, 110});
     world.AddObject(object1);
 
     auto object2 = CreateObject(std::make_shared<Circle>(20.0f));
-    object2->SetPosition({150, 150});
+    object2->Transform().SetPosition({150, 150});
     object2->MakeObjectStatic();
     world.AddObject(object2);
 
@@ -60,7 +60,7 @@ int main()
         {50.0f, -50.0f},
         {50.0f, 50.0f}
     }));
-    object3->SetPosition({100, 200});
+    object3->Transform().SetPosition({100, 200});
     world.AddObject(object3);
 
     auto object4 = CreateObject(std::make_shared<ConvexPolygon>(std::vector<Vec3>{
@@ -69,7 +69,7 @@ int main()
         {100.0f, 100.0f},
         {-100.0f, 100.0f}
     }));
-    object4->SetPosition({300, 200});
+    object4->Transform().SetPosition({300, 200});
     world.AddObject(object4);
 
     sf::Clock deltaClock;
@@ -107,7 +107,7 @@ int main()
             if (picked_object)
             {
                 auto rotated_offset = offset;
-                rotated_offset.Rotate(picked_object->Rotation());
+                rotated_offset.Rotate(picked_object->Transform().Rotation());
                 obj_to_mouse = Vec3{x, y} - picked_object->Collider()->Transform().GlobalPosition(offset);
                 obj_to_mouse.Normalize();
 
@@ -148,7 +148,7 @@ int main()
         {
             window.draw(gizmo.Point({x, y}));
 
-            const auto picked_point = picked_object->Collider()->Transform().GlobalPosition(offset);
+            const auto picked_point = picked_object->Transform().GlobalPosition(offset);
             window.draw(gizmo.Point(picked_point));
             window.draw(gizmo.Direction(picked_point, obj_to_mouse, sf::Color::Blue));
         }

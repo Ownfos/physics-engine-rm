@@ -33,18 +33,6 @@ const MaterialProperties& Rigidbody::Material() const
     return m_material;
 }
 
-const Vec3& Rigidbody::Position() const
-{
-    return Collider()->Transform().Position();
-    // return m_displacement.linear;
-}
-
-Radian Rigidbody::Rotation() const
-{
-    return Collider()->Transform().Rotation();
-    // return m_displacement.angular;
-}
-
 const Vec3& Rigidbody::LinearVelocity() const
 {
     return m_velocity.linear;
@@ -85,22 +73,6 @@ bool Rigidbody::IsPointInside(const Vec3& global_pos) const
 Vec3 Rigidbody::GlobalVelocity(const Vec3& local_pos) const
 {
     return LinearVelocity() + AngularVelocity().Cross(local_pos);
-}
-
-void Rigidbody::SetPosition(const Vec3& new_position)
-{
-    Collider()->Transform().SetPosition(new_position);
-}
-
-void Rigidbody::MovePosition(const Vec3& offset)
-{
-    Collider()->Transform().SetPosition(Position() + offset);
-}
-
-void Rigidbody::SetRotation(Radian new_rotation)
-{
-    Collider()->Transform().SetRotation(new_rotation);
-    // m_displacement.angular.z = new_rotation;
 }
 
 /**
@@ -150,7 +122,7 @@ bool Rigidbody::IsOutOfBoundaryRadius(const Rigidbody& other) const
     const auto squared_max_distance = max_collision_distance * max_collision_distance;
 
     // Now calculate the actual distance between their origin.
-    const auto rel_pos = Position() - other.Position();
+    const auto rel_pos = Transform().Position() - other.Transform().Position();
     const auto squared_distance = rel_pos.SquaredMagnitude();
 
     // If the actual distance is greater than the upper limit,
@@ -199,10 +171,9 @@ void Rigidbody::ApplyImpulse(const Vec3& rel_impact_pos, const Vec3& impulse, fl
 
 void Rigidbody::Update(float delta_time)
 {
-    SetPosition(Position() + m_velocity.linear * delta_time);
-    SetRotation(Rotation() + m_velocity.angular.z * delta_time);
-    // m_displacement.linear += m_velocity.linear * delta_time;
-    // m_displacement.angular += m_velocity.angular * delta_time;
+    auto& transform = Transform();
+    transform.SetPosition(transform.Position() + m_velocity.linear * delta_time);
+    transform.SetRotation(transform.Rotation() + m_velocity.angular.z * delta_time);
 
     m_velocity.linear += m_acceleration.linear * delta_time;
     m_velocity.angular += m_acceleration.angular * delta_time;
@@ -216,9 +187,9 @@ void Rigidbody::Update(float delta_time)
     // Note that SFML uses degree as unit, while our rotation is radian.
     auto& shape = m_collider->SFMLShape();
 
-    auto [x, y, _] = Position();
+    auto [x, y, _] = transform.Position();
     shape.setPosition(x, y);
-    shape.setRotation(rad2deg(Rotation()));
+    shape.setRotation(rad2deg(transform.Rotation()));
 }
 
 } // namespace physics

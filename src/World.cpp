@@ -91,8 +91,8 @@ void World::ResolveCollisions(float delta_time)
         {
             // Local coordinates of the position where
             // the collision impulse will be applied to.
-            const auto rel_impact_pos1 = contact - obj1->Position();
-            const auto rel_impact_pos2 = contact - obj2->Position();
+            const auto rel_impact_pos1 = contact - obj1->Transform().Position();
+            const auto rel_impact_pos2 = contact - obj2->Transform().Position();
 
             // The global velocity of impact points.
             const auto impact_vel1 = obj1->GlobalVelocity(rel_impact_pos1);
@@ -147,8 +147,12 @@ void World::ResolveCollisions(float delta_time)
             // is distributed according to the ratio of inverse mass.
             // This makes heavy objects stable, while light objects move more.
             const auto inv_mass_ratio = inv_mass1 / (inv_mass1 + inv_mass2);
-            obj1->MovePosition(-required_translation * inv_mass_ratio);
-            obj2->MovePosition(required_translation * (1.0f - inv_mass_ratio));
+
+            auto& transform1 = obj1->Transform();
+            transform1.SetPosition(transform1.Position() - required_translation * inv_mass_ratio);
+            
+            auto& transform2 = obj2->Transform();
+            transform2.SetPosition(transform2.Position() + required_translation * (1.0f - inv_mass_ratio));
         }
     }
 }
