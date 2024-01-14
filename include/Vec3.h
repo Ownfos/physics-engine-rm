@@ -7,6 +7,10 @@
 namespace physics
 {
 
+/**
+ * @brief Any float value with absolute value under
+ *        this threshold is considered equal to 0.
+ */
 constexpr float epsilon = 0.0000001f;
 
 struct Vec3
@@ -36,14 +40,26 @@ struct Vec3
     bool IsZero() const;
 
     /**
+     * @brief Set the magnitude to 1.
+     * 
      * @note We cannot normalize a zero vector!
      *       In such case, the vector stays the same.
      */
     void Normalize();
 
+    /**
+     * @brief Rotate the vector itself in counter-clockwise direction.
+     */
     void Rotate(Radian angle);
+
+    /**
+     * @brief Create a new vector which is rotated counter-clockwise.
+     */
     Vec3 Rotated(Radian angle) const;
 
+    /**
+     * @return The projection vector onto the @p normalized_dir.
+     */
     Vec3 Projection(const Vec3& normalized_dir) const;
 };
 

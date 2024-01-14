@@ -7,6 +7,11 @@
 namespace physics
 {
 
+/**
+ * @brief Gizmo is a helper class for drawing debug-purpose shapes using SFML.
+ *        It provides a reference to an SFML shape that represents
+ *        a point or a directional vector, using global coordinate.
+ */
 class Gizmo
 {
 public:

@@ -9,9 +9,12 @@
 namespace physics
 {
 
-// Used for SAT algorithm to store the minimum and maximum
-// dot product between all vertices and a single direction vector.
-// @see FindMinimumPenetration() defined in Rigidbody.cpp
+/**
+ * @brief Used for SAT algorithm to store the minimum and maximum
+ *        dot product between all vertices and a single direction vector.
+ * 
+ * @see FindMinimumPenetration() defined in Rigidbody.cpp
+ */
 struct ProjectionRange
 {
     float min;
@@ -25,12 +28,21 @@ struct ProjectionRange
     int min_vertex_index;
     int max_vertex_index;
 
+    /**
+     * @return True if there is no overlapping region between the ranges.
+     */
     bool IsSeparated(const ProjectionRange& other) const
     {
         return min > other.max || max < other.min;
     }
 };
 
+/**
+ * @brief Penetration represents an abstract information
+ *        on a possible collision along a polygon's edge.
+ * 
+ * @see ConvexPolygon::FindMinimumPenetration()
+ */
 struct Penetration
 {
     LineSegment edge;
@@ -39,7 +51,10 @@ struct Penetration
 
     /**
      * @brief Comparison by penetration depth.
-     * @note std::min requires this operator.
+     * 
+     * @note std::min requires definition of this operator.
+     * 
+     * @see ConvexPolygon::CheckCollisionAccept(const ConvexPolygon* other)
      */
     bool operator<(const Penetration& other) const
     {
@@ -47,17 +62,27 @@ struct Penetration
     }
 };
 
+/**
+ * @brief ConvexPolygon is a type of collider that represents
+ *        a closed region defined by a list of vertices
+ *        ordered in counter-clockwise manner.
+ * 
+ * @warning Constructor can fail if given vertices do not represent
+ *          a convex polygon, or the order of them was not counter-clockwise.
+ * 
+ * @note Due to the fact that SFML uses (0, 0) as the top-left corner,
+ *       a ConvexPolygon will appear as if it has a clockwise ordering of vertices.
+ */
 class ConvexPolygon : public ICollider
 {
 public:
     /**
-     * @note The order of @p vertices must be counter-clockwise!
-     *       If not, an exception will be thrown.
+     * @warning The order of @p vertices must be counter-clockwise!
+     *          If not, an exception will be thrown.
      */
     ConvexPolygon(const std::vector<Vec3>& vertices);
 
     virtual float BoundaryRadius() const override;
-    virtual ColliderType Type() const override;
     virtual bool IsPointInside(const Vec3& local_point) const override;
     virtual float Area() const override;
     virtual Vec3 CenterOfMass() const override;

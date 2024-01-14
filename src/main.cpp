@@ -10,11 +10,11 @@ using namespace physics;
 
 /*
 TODO:
-- fix bug: collision detection doesn't work before appling external force...
 - implement friction
 - implement damping
 - implement spring
 - implement object grapping using spring
+- implement dynamic object creation using GUI and mouse clicks
 - add description about the math stuff used to derive equation for impulse magnitude...
 */
 
@@ -82,36 +82,37 @@ int main()
                 window.close();
         }
 
+        // UI and object dragging.
         auto delta_time = deltaClock.restart();
+        ImGui::SFML::Update(window, delta_time);
+        ImGui::Begin("test window");
+        
+        static float drag_force = 2;
+        ImGui::SliderFloat("drag force", &drag_force, 1, 10);
 
         static float time_scale = 1.0f;
+        ImGui::SliderFloat("time scale", &time_scale, 0.01f, 1.0f);
+
         auto time_step = delta_time.asSeconds() * time_scale;
 
-        ImGui::SFML::Update(window, delta_time);
-
-        // UI
-        ImGui::Begin("test window");
         static std::shared_ptr<Rigidbody> picked_object;
-        static Vec3 offset;
-        static float drag_force = 2;
+        static Vec3 picked_offset;
         static Vec3 obj_to_mouse;
-        ImGui::SliderFloat("drag force", &drag_force, 1, 10);
-        ImGui::SliderFloat("time scale", &time_scale, 0.01f, 1.0f);
         auto [x, y] = ImGui::GetMousePos();
         if (ImGui::IsMouseClicked(ImGuiMouseButton_Left))
         {
             if (picked_object = world.PickObject({x, y}))
             {
-                offset = picked_object->Collider()->Transform().LocalPosition({x, y});
+                picked_offset = picked_object->Collider()->Transform().LocalPosition({x, y});
             }
         }
         else if (ImGui::IsMouseDown(ImGuiMouseButton_Left))
         {
             if (picked_object)
             {
-                auto rotated_offset = offset;
+                auto rotated_offset = picked_offset;
                 rotated_offset.Rotate(picked_object->Transform().Rotation());
-                obj_to_mouse = Vec3{x, y} - picked_object->Collider()->Transform().GlobalPosition(offset);
+                obj_to_mouse = Vec3{x, y} - picked_object->Collider()->Transform().GlobalPosition(picked_offset);
                 obj_to_mouse.Normalize();
 
                 // Prevent division by zero if we try to drag a static object.
@@ -132,8 +133,7 @@ int main()
         world.ResolveCollisions(time_step);
         world.Update(time_step);
 
-
-        // Render
+        // Prepare rendering.
         window.clear(sf::Color::White);
 
         // Draw all objects.
@@ -151,7 +151,7 @@ int main()
         {
             window.draw(gizmo.Point({x, y}));
 
-            const auto picked_point = picked_object->Transform().GlobalPosition(offset);
+            const auto picked_point = picked_object->Transform().GlobalPosition(picked_offset);
             window.draw(gizmo.Point(picked_point));
             window.draw(gizmo.Direction(picked_point, obj_to_mouse, sf::Color::Blue));
         }

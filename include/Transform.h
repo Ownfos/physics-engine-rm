@@ -8,6 +8,11 @@
 namespace physics
 {
 
+/**
+ * @brief Transform represents translation and rotation of an object.
+ *        It also provides several helper functions for
+ *        conversion between local and global oordinate system.
+ */
 class Transform
 {
 public:

@@ -50,11 +50,6 @@ float ConvexPolygon::BoundaryRadius() const
     return m_boundary_radius;
 }
 
-ColliderType ConvexPolygon::Type() const
-{
-    return ColliderType::ConvexPolygon;
-}
-
 bool ConvexPolygon::IsPointInside(const Vec3& local_point) const
 {
     // Key idea: since vertices are ordered counter-clockwise,

@@ -6,6 +6,17 @@
 namespace physics
 {
 
+/**
+ * @brief LineSegment represents a finite line with start and end point.
+ * 
+ * @note In case of a default-constructed instance,
+ *       every method will simply return a zero vector.
+ * 
+ * @note The coordinate system used to represent
+ *       boundary points can be either local or global.
+ *       Use Transform::GlobalEdge() and Transform::LocalEdge()
+ *       for conversion between coordinate systems.
+ */
 class LineSegment
 {
 public:
@@ -27,6 +38,9 @@ public:
      */
     const Vec3& Normal() const;
 
+    /**
+     * @return Distance between Start() and End().
+     */
     float Length() const;
 
     /**

@@ -11,8 +11,10 @@
 namespace physics
 {
 
-// "DoF" Stands for "Degree of Freedom".
-// It represents displacement and velocity of a rigidbody.
+/**
+ * @brief "DoF" Stands for "Degree of Freedom".
+ *        It represents velocity and acceleration of a rigidbody.
+ */
 struct DoF
 {
     Vec3 linear;
@@ -26,12 +28,14 @@ struct DoF
     // @note unit is radian, not degrees.
     Vec3 angular;
 };
-
-// A set of physical constants that determine dynamics.
-// 
-// @note These coefficients are supposed to be defined between a pair of objects,
-//       but I just decided to give a value for each object
-//       and use the average as an approximation.
+ 
+/**
+ * @brief A set of physical constants that determine dynamics.
+ * 
+ * @note These coefficients are supposed to be defined between a pair of objects,
+ *       but I just decided to give a value for each object
+ *       and use the average value of a colliding pair as an approximation.
+ */
 struct MaterialProperties
 {
     /**
@@ -71,6 +75,12 @@ struct MaterialProperties
 // Forward declaration for CollisionPair definition.
 class Rigidbody;
 
+/**
+ * @brief CollisionPair is a wrapper data of CollisionInfo,
+ *        which provides pointers to the colliding objects.
+ * 
+ * @note CollisionInfo does not contain information about 'who'
+ */
 struct CollisionPair
 {
     // Objects who collided with each other.
@@ -81,6 +91,17 @@ struct CollisionPair
     CollisionInfo info;
 };
 
+/**
+ * @brief Rigidbody represents a nondeformable object
+ *        which can rotate and translate.
+ * 
+ * @note Collision detection is handled by colliders.
+ * 
+ * @note Collision resolution is handled by World class,
+ *       using information from rigidbodies.
+ * 
+ * @note Rigidbody uses Transform of its collider.
+ */
 class Rigidbody
 {
 public:
@@ -185,6 +206,12 @@ private:
     DoF m_velocity;
     DoF m_acceleration;
 
+    /**
+     * Reason for storing inverse of mass and inertia:
+     * 1. Division by mass or inertia is more frequent than the value itself.
+     * 2. Easy to handle infinite mass and inertia,
+     *    which is used to represent a static object.
+     */
     float m_inv_mass;
     float m_inv_inertia;
 

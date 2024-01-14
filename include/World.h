@@ -6,6 +6,9 @@
 namespace physics
 {
 
+/**
+ * @brief World is a helper class for managing a group of simulated rigidbodies.
+*/
 class World
 {
 public:
@@ -50,16 +53,33 @@ public:
 
     /**
      * @return The first rigidbody which contains the specified point.
+     * 
      * @note If there are multiple candidates, the 'oldest' object is selected.
      */
     std::shared_ptr<Rigidbody> PickObject(const Vec3& pos);
 
     /**
      * @brief Detect every collision occurrance within this time step.
+     * 
      * @note The result can be retreived by calling World::Collisions().
      */
     void CheckCollisions();
+
+    /**
+     * @brief Calculate and apply impulse for each collision
+     *        so that they can be resolved on the next frame.
+     * 
+     * @param delta_time The time step of the next Update() invocation.
+     * 
+     * @note CheckCollisions() must be preceded.
+     */
     void ResolveCollisions(float delta_time);
+
+    /**
+     * @brief Update position and velocity of all objects.
+     * 
+     * @param delta_time The time step used in explicit euler integration.
+     */
     void Update(float delta_time);
 
 private:

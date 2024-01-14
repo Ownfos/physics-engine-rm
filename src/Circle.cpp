@@ -18,11 +18,6 @@ float Circle::BoundaryRadius() const
     return m_shape.getRadius();
 }
 
-ColliderType Circle::Type() const
-{
-    return ColliderType::Circle;
-}
-
 bool Circle::IsPointInside(const Vec3& local_point) const
 {
     return local_point.Magnitude() <= BoundaryRadius();

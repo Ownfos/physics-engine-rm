@@ -8,12 +8,6 @@
 namespace physics
 {
 
-enum class ColliderType
-{
-    ConvexPolygon,
-    Circle
-};
-
 struct CollisionInfo
 {
     // Global coordinate of points where collision occurred.
@@ -34,6 +28,20 @@ struct CollisionInfo
 class Circle;
 class ConvexPolygon;
 
+/**
+ * @brief ICollider is an interface for all colliders.
+ *        It provides transform, collision detection,
+ *        an SFML shape for rendering, and some utility functions
+ *        for transforming vectors and edges between
+ *        global and local coordinate system.
+ * 
+ * @note Since collision detection between every possible pair
+ *       of concrete collider type is required,
+ *       the design choice was to fix the type of colliders and
+ *       use visitor pattern to implement double dispatch.
+ * 
+ * @see ICollider::CheckCollision() and ICollider::CheckCollisionAccept()
+ */
 class ICollider
 {
 public:
@@ -47,12 +55,6 @@ public:
      *         Any point outside this radius is guaranteed to be outside.
      */
     virtual float BoundaryRadius() const = 0;
-
-    /**
-     * @return The shape identifier.
-     * @note This value is used to dispatch collision detection function.
-     */
-    virtual ColliderType Type() const = 0;
 
     /**
      * @param point The point we want to test.
@@ -130,7 +132,6 @@ public:
     }
 
 protected:
-
     physics::Transform m_transform;
 };
 
