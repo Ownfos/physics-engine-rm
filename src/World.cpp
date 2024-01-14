@@ -147,12 +147,8 @@ void World::ResolveCollisions(float delta_time)
             // is distributed according to the ratio of inverse mass.
             // This makes heavy objects stable, while light objects move more.
             const auto inv_mass_ratio = inv_mass1 / (inv_mass1 + inv_mass2);
-
-            auto& transform1 = obj1->Transform();
-            transform1.SetPosition(transform1.Position() - required_translation * inv_mass_ratio);
-            
-            auto& transform2 = obj2->Transform();
-            transform2.SetPosition(transform2.Position() + required_translation * (1.0f - inv_mass_ratio));
+            obj1->Transform().AddPosition(- required_translation * inv_mass_ratio);
+            obj2->Transform().AddPosition(required_translation * (1.0f - inv_mass_ratio));
         }
     }
 }

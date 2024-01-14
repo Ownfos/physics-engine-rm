@@ -172,8 +172,8 @@ void Rigidbody::ApplyImpulse(const Vec3& rel_impact_pos, const Vec3& impulse, fl
 void Rigidbody::Update(float delta_time)
 {
     auto& transform = Transform();
-    transform.SetPosition(transform.Position() + m_velocity.linear * delta_time);
-    transform.SetRotation(transform.Rotation() + m_velocity.angular.z * delta_time);
+    transform.AddPosition(m_velocity.linear * delta_time);
+    transform.AddRotation(m_velocity.angular.z * delta_time);
 
     m_velocity.linear += m_acceleration.linear * delta_time;
     m_velocity.angular += m_acceleration.angular * delta_time;
