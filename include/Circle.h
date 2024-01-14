@@ -16,6 +16,7 @@ public:
     virtual ColliderType Type() const override;
     virtual bool IsPointInside(const Vec3& local_point) const override;
     virtual float Area() const override;
+    virtual Vec3 CenterOfMass() const override;
 
     virtual sf::Shape& SFMLShape() override;
     virtual const sf::Shape& SFMLShape() const override;

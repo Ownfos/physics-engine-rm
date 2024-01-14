@@ -10,10 +10,7 @@ using namespace physics;
 
 /*
 TODO:
-1. move poly vs poly to ConvexPolygon.cpp
-2. remove Rigidbody::checkcollision
-3. change CollisionPair to use CollisionInfo as member variable
-
+- fix bug: collision detection doesn't work before appling external force...
 - implement friction
 - implement damping
 - implement spring
@@ -30,9 +27,10 @@ std::shared_ptr<Rigidbody> CreateObject(std::shared_ptr<ICollider> collider)
     };
 
     // Approximate mass and inertia based on the size.
+    // Note: according to parallel-axis theorem, I = Icm + md^2.
     const auto area = collider->Area();
     const auto mass = area;
-    const auto inertia = area * area;
+    const auto inertia = area * area + mass * collider->CenterOfMass().SquaredMagnitude();
 
     return std::make_shared<Rigidbody>(collider, default_mat, mass, inertia);
 }

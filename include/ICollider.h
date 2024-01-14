@@ -68,6 +68,11 @@ public:
     virtual float Area() const = 0;
 
     /**
+     * @return The central point, assuming that density is uniform.
+     */
+    virtual Vec3 CenterOfMass() const = 0;
+
+    /**
      * @return The SFML representation of this collider.
      */
     virtual sf::Shape& SFMLShape() = 0;

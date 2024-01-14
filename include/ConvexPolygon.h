@@ -60,6 +60,7 @@ public:
     virtual ColliderType Type() const override;
     virtual bool IsPointInside(const Vec3& local_point) const override;
     virtual float Area() const override;
+    virtual Vec3 CenterOfMass() const override;
 
     virtual sf::Shape& SFMLShape() override;
     virtual const sf::Shape& SFMLShape() const override;
@@ -112,7 +113,8 @@ private:
     // SFML representation.
     sf::ConvexShape m_shape;
 
-    float m_boundary_radius;
+    float m_boundary_radius = 0.0f;
+    Vec3 m_center_of_mass = {};
 };
 
 } // namespace physics

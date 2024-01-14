@@ -22,6 +22,10 @@ ConvexPolygon::ConvexPolygon(const std::vector<Vec3>& vertices)
 
         // Record the length of the farthest vertex as boundary radius.
         m_boundary_radius = std::max(m_boundary_radius, curr.Magnitude());
+
+        // Assuming uniform density,
+        // the center of mass should be the average of all vertices.
+        m_center_of_mass += curr / num_vertices;
     }
 
     ValidateCounterClockwiseOrder();
@@ -81,6 +85,11 @@ float ConvexPolygon::Area() const
     }
 
     return area;
+}
+
+Vec3 ConvexPolygon::CenterOfMass() const
+{
+    return m_center_of_mass;
 }
 
 sf::Shape& ConvexPolygon::SFMLShape()

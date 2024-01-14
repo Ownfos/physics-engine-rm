@@ -33,6 +33,11 @@ float Circle::Area() const
     return BoundaryRadius() * BoundaryRadius() * pi;
 }
 
+Vec3 Circle::CenterOfMass() const
+{
+    return Transform().Position();
+}
+
 sf::Shape& Circle::SFMLShape()
 {
     return m_shape;
@@ -103,17 +108,17 @@ std::optional<CollisionInfo> Circle::CheckCollisionAccept(const ConvexPolygon* o
     // 2. circle's center is outside the polygon,
     //    but the distance is shorter than its radius.
 
+    // The position of the circle's center w.r.t. the polygon.
+    const auto circle_rel_pos = other->Transform().LocalPosition(Transform().Position());
+
     // Case 1) check if the center of the circle is within the polygon.
-    const auto is_circle_inside_poly = other->IsPointInside(Transform().Position());
+    const auto is_circle_inside_poly = other->IsPointInside(circle_rel_pos);
 
     // From now on, every calculation will be done under polygon's coordinate system.
     auto result = CollisionInfo{};
     const auto circle_radius = BoundaryRadius();
     for (const auto& edge : other->Edges())
     {
-        // The position of the circle's center w.r.t. the polygon.
-        const auto circle_rel_pos = other->Transform().LocalPosition(Transform().Position());
-
         // Case 2) check if the circle is close enough to the polygon's boundary.
         const auto closest_point = edge.FindClosestPointOnLine(circle_rel_pos);
         const auto edge_to_circle_center = circle_rel_pos - closest_point;
