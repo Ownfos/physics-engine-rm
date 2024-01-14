@@ -129,6 +129,13 @@ void World::ResolveCollisions(float delta_time)
             //   We might have multiple impact points per collision!
             //   To approximate total energy conservation,
             //   the average impulse of all local impulse per impact point must be used.
+            //
+            // - example scenario -
+            // Suppose two parallel squares are colliding horizontally.
+            // If one square is smaller, we will have two contact points on an overlapping edge.
+            // This means we apply impulse on two corners!
+            // Since each impulse magnitude j is calculated for complete resolution,
+            // we need to divide each impulse by 2 so that the sum of them gives the right answer.
             const auto impulse = collision_normal * j / collision.info.contacts.size();
 
             // Due to the law of action and reaction,
