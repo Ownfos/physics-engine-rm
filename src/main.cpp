@@ -10,8 +10,10 @@ using namespace physics;
 
 /*
 TODO:
-- implement polygon-polygon collision check
-- separate collision detection logic to another file
+1. move poly vs poly to ConvexPolygon.cpp
+2. remove Rigidbody::checkcollision
+3. change CollisionPair to use CollisionInfo as member variable
+
 - implement friction
 - implement damping
 - implement spring
@@ -97,7 +99,7 @@ int main()
         {
             if (picked_object = world.PickObject({x, y}))
             {
-                offset = picked_object->GlobalToLocal({x, y});
+                offset = picked_object->Collider()->Transform().LocalPosition({x, y});
             }
         }
         else if (ImGui::IsMouseDown(ImGuiMouseButton_Left))
@@ -105,8 +107,8 @@ int main()
             if (picked_object)
             {
                 auto rotated_offset = offset;
-                rotated_offset.Rotate(picked_object->Rotation().z);
-                obj_to_mouse = Vec3{x, y} - picked_object->LocalToGlobal(offset);
+                rotated_offset.Rotate(picked_object->Rotation());
+                obj_to_mouse = Vec3{x, y} - picked_object->Collider()->Transform().GlobalPosition(offset);
                 obj_to_mouse.Normalize();
 
                 // Prevent division by zero if we try to drag a static object.
@@ -145,8 +147,10 @@ int main()
         if (picked_object)
         {
             window.draw(gizmo.Point({x, y}));
-            window.draw(gizmo.Point(picked_object->LocalToGlobal(offset)));
-            window.draw(gizmo.Direction(picked_object->LocalToGlobal(offset), obj_to_mouse, sf::Color::Blue));
+
+            const auto picked_point = picked_object->Collider()->Transform().GlobalPosition(offset);
+            window.draw(gizmo.Point(picked_point));
+            window.draw(gizmo.Direction(picked_point, obj_to_mouse, sf::Color::Blue));
         }
 
         // Draw contact points for all collisions.

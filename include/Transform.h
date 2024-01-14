@@ -34,8 +34,8 @@ public:
     LineSegment LocalEdge(const LineSegment& global_edge) const;
     
 private:
-    Vec3 m_position;
-    Radian m_rotation;
+    Vec3 m_position = {};
+    Radian m_rotation = 0.0f;
 };
 
 } // namespace physics

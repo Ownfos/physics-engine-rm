@@ -22,7 +22,7 @@ public:
      * @return The list of collisions occured during this time step.
      * @note World::CheckCollision() must be called beforehand!
      */
-    const std::vector<CollisionInfo>& Collisions() const;
+    const std::vector<CollisionPair>& Collisions() const;
 
     /**
      * @brief Change the behavior of position adjustment
@@ -72,7 +72,7 @@ private:
      * @brief Stores all collisions detected during this time step.
      *        This gets overwritten whenever World::CheckCollision() is called.
      */
-    std::vector<CollisionInfo> m_collisions;
+    std::vector<CollisionPair> m_collisions;
 
     /**
      * @brief Parameters for positional correction.

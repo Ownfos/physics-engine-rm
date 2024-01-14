@@ -12,7 +12,7 @@ class Rigidbody;
 
 // Stores set of informations calculated from a collision check
 // such as collision normal vector and penetration depth.
-struct CollisionInfo
+struct CollisionPair
 {
     // Objects who collided with each other.
     Rigidbody* object1;

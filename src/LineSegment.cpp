@@ -63,5 +63,27 @@ Vec3 LineSegment::FindClosestPointOnLine(const Vec3& external_point) const
     return m_start + t * start_to_end;
 }
 
+LineSegment LineSegment::Clip(const LineSegment& reference) const
+{
+    const auto proj_start = (Start() - reference.Start()).Dot(reference.Tangent());
+    const auto proj_end = (End() - reference.Start()).Dot(reference.Tangent());
+
+    const auto dividing_point = [&, max = reference.Length()](float projection){
+        // Limit the position to the region between the reference edge's end points.
+        const auto clipped_projection = std::clamp(projection, 0.0f, max);
+
+        // Divide the incident edge with given boundary condition:
+        //   proj_start --> incident_edge.Start()
+        //   proj_end --> incident_edge.End()
+        const auto rel_pos = (clipped_projection - proj_start) / (proj_end - proj_start);
+        return Start() + rel_pos * (End() - Start());
+    };
+
+    return {
+        dividing_point(proj_start),
+        dividing_point(proj_end)
+    };
+}
+
 } // namespace physics
 

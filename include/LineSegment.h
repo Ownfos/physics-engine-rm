@@ -40,6 +40,19 @@ public:
      */
     Vec3 FindClosestPointOnLine(const Vec3& external_point) const;
 
+    /**
+     * @brief Find a subrange of this line segment that resides within
+     *        the range defined by @p reference.
+     * 
+     * @param reference_edge A line segment that defines the clipping region.
+     * 
+     * @warning @p reference should use global coordinate system.
+     * 
+     * @note 'clipping region' refers to an infinite rectangle
+     *        between start end end point of the @p reference.
+     */
+    LineSegment Clip(const LineSegment& reference) const;
+
 private:
     Vec3 m_start;
     Vec3 m_end;

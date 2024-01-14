@@ -83,9 +83,12 @@ public:
     const ICollider* Collider() const;
     const MaterialProperties& Material() const;
     const Vec3& Position() const;
-    const Vec3& Rotation() const;
+    Radian Rotation() const;
     const Vec3& LinearVelocity() const;
     const Vec3& AngularVelocity() const;
+
+    const physics::Transform& Transform() const;
+    physics::Transform& Transform();
 
     float InverseMass() const;
     float InverseInertia() const;
@@ -97,15 +100,6 @@ public:
      *         considering object's transform.
      */
     bool IsPointInside(const Vec3& global_pos) const;
-
-    /**
-     * @brief Helper functions for transforming coordinates
-     *        between global and local coordinate systems.
-     */
-    Vec3 LocalToGlobal(const Vec3& local_pos) const;
-    Vec3 GlobalToLocal(const Vec3& global_pos) const;
-    LineSegment LocalToGlobal(const LineSegment& local_edge) const;
-    LineSegment GlobalToLocal(const LineSegment& global_edge) const;
 
     /**
      * @return The velocity of a point inside this rigidbody
@@ -151,10 +145,10 @@ public:
      * @brief Return the collision information if the two objects collided.
      * 
      * @note This function is non-const because we need to apply impulse
-     *       using object pointers stored in CollisionInfo,
+     *       using object pointers stored in CollisionPair,
      *       and applying impulse involves state change in displacement and velocity.
      */
-    std::optional<CollisionInfo> CheckCollision(Rigidbody& other);
+    std::optional<CollisionPair> CheckCollision(Rigidbody& other);
 
     /**
      * @brief Assuming that a constant force will be applied on a local point @p impact_pos,

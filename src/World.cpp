@@ -14,7 +14,7 @@ const std::vector<std::shared_ptr<Rigidbody>>& World::Objects() const
     return m_objects;
 }
 
-const std::vector<CollisionInfo>& World::Collisions() const
+const std::vector<CollisionPair>& World::Collisions() const
 {
     return m_collisions;
 }
