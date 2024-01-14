@@ -2,7 +2,7 @@
 #define PHYSICS_I_COLLIDER_H
 
 #include "SFML/Graphics/Shape.hpp"
-#include "Vec3.h"
+#include "Transform.h"
 
 namespace physics
 {
@@ -51,6 +51,19 @@ public:
      */
     virtual sf::Shape& SFMLShape() = 0;
     virtual const sf::Shape& SFMLShape() const = 0;
+
+    inline physics::Transform& Transform()
+    {
+        return m_transform;
+    }
+
+    inline const physics::Transform& Transform() const
+    {
+        return m_transform;
+    }
+
+protected:
+    physics::Transform m_transform;
 };
 
 } // namespace physics
