@@ -143,15 +143,15 @@ std::optional<CollisionInfo> ConvexPolygon::CheckCollisionAccept(const ConvexPol
     };
     const ConvexPolygon* reference_obj;
     const ConvexPolygon* incident_obj;
-    if (penetration_other_to_this < penetration_this_to_other)
-    {
-        reference_obj = this;
-        incident_obj = other;
-    }
-    else
+    if (penetration_this_to_other < penetration_other_to_this)
     {
         reference_obj = other;
         incident_obj = this;
+    }
+    else
+    {
+        reference_obj = this;
+        incident_obj = other;
     }
 
     // Since edges use local coordinate system of each object,
@@ -256,7 +256,7 @@ std::optional<Penetration> ConvexPolygon::FindMinimumPenetration(const ConvexPol
     }
 
     // If the algorithm is valid, penetration depth should always be positive.
-    assert(result->depth > 0.0f);
+    assert(result->depth >= 0.0f);
 
     return result;
 }

@@ -123,7 +123,21 @@ void World::ResolveCollisions(float delta_time)
                 inv_mass1 + inv_mass2
                 + rel_impact_pos1.Cross(collision_normal).SquaredMagnitude() * obj1->InverseInertia()
                 + rel_impact_pos2.Cross(collision_normal).SquaredMagnitude() * obj2->InverseInertia();
-            const auto j = -(1 + coef.restitution) * contact_normal_vel / denominator;
+            const auto normal_impulse_magnitude = -(1 + coef.restitution) * contact_normal_vel / denominator;
+            const auto normal_impulse = collision_normal * normal_impulse_magnitude;
+
+            // Calculate friction.
+            auto contact_tangent = rel_impact_vel - rel_impact_vel.Projection(collision_normal);
+            contact_tangent.Normalize();
+
+            // Tangential velocity was nonzero, so dynamic friction comes in.
+            const auto contact_tangent_vel = rel_impact_vel.Dot(contact_tangent);
+            auto tangential_impulse_magnitude = 0.0f;
+            if (contact_tangent_vel > epsilon)
+            {
+                tangential_impulse_magnitude = normal_impulse_magnitude * coef.dynamic_friction;
+            }
+            const auto tangential_impulse = -contact_tangent * tangential_impulse_magnitude;
 
             // Reason for dividing impulse for this contact point by contact size:
             //   We might have multiple impact points per collision!
@@ -136,12 +150,12 @@ void World::ResolveCollisions(float delta_time)
             // This means we apply impulse on two corners!
             // Since each impulse magnitude j is calculated for complete resolution,
             // we need to divide each impulse by 2 so that the sum of them gives the right answer.
-            const auto impulse = collision_normal * j / collision.info.contacts.size();
+            const auto total_impulse = (normal_impulse + tangential_impulse) / collision.info.contacts.size();
 
             // Due to the law of action and reaction,
             // the magnitude of impulse is same but the direction is opposite.
-            obj1->ApplyImpulse(rel_impact_pos1, -impulse, delta_time);
-            obj2->ApplyImpulse(rel_impact_pos2, impulse, delta_time);
+            obj1->ApplyImpulse(rel_impact_pos1, -total_impulse, delta_time);
+            obj2->ApplyImpulse(rel_impact_pos2, total_impulse, delta_time);
         }
 
         // Perform positional correction.

@@ -21,7 +21,7 @@ TODO:
 std::shared_ptr<Rigidbody> CreateObject(std::shared_ptr<ICollider> collider)
 {
     auto default_mat = MaterialProperties{
-        .restitution = 1.0f,
+        .restitution = 0.4f,
         .static_friction = 0.8f,
         .dynamic_friction = 0.5f
     };
@@ -44,13 +44,17 @@ int main()
     auto gizmo = Gizmo();
     auto world = World();
 
-    auto object1 = CreateObject(std::make_shared<Circle>(10.0f));
-    object1->Transform().SetPosition({100, 110});
-    world.AddObject(object1);
+    auto object1 = CreateObject(std::make_shared<Circle>(20.0f));
+    object1->Transform().SetPosition({100, 310});
+    // world.AddObject(object1);
 
-    auto object2 = CreateObject(std::make_shared<Circle>(20.0f));
-    object2->Transform().SetPosition({150, 150});
-    object2->MakeObjectStatic();
+    auto object2 = CreateObject(std::make_shared<ConvexPolygon>(std::vector<Vec3>{
+        {-20.0f, -20.0f},
+        {20.0f, -20.0f},
+        {20.0f, 20.0f},
+        {-20.0f, 20.0f}
+    }));
+    object2->Transform().SetPosition({150, 400});
     world.AddObject(object2);
 
     auto object3 = CreateObject(std::make_shared<ConvexPolygon>(std::vector<Vec3>{
@@ -58,16 +62,17 @@ int main()
         {50.0f, -50.0f},
         {50.0f, 50.0f}
     }));
-    object3->Transform().SetPosition({100, 200});
-    world.AddObject(object3);
+    object3->Transform().SetPosition({500, 200});
+    // world.AddObject(object3);
 
     auto object4 = CreateObject(std::make_shared<ConvexPolygon>(std::vector<Vec3>{
-        {-100.0f, -100.0f},
-        {100.0f, -100.0f},
-        {100.0f, 100.0f},
-        {-100.0f, 100.0f}
+        {-300.0f, -30.0f},
+        {300.0f, -30.0f},
+        {300.0f, 30.0f},
+        {-300.0f, 30.0f}
     }));
-    object4->Transform().SetPosition({300, 200});
+    object4->Transform().SetPosition({400, 500});
+    object4->MakeObjectStatic();
     world.AddObject(object4);
 
     sf::Clock deltaClock;
@@ -92,8 +97,22 @@ int main()
 
         static float time_scale = 1.0f;
         ImGui::SliderFloat("time scale", &time_scale, 0.01f, 1.0f);
-
         auto time_step = delta_time.asSeconds() * time_scale;
+
+        static bool enable_gravity = false;
+        ImGui::Checkbox("enable gravity", &enable_gravity);
+        static float gravity = 9.8f;
+        ImGui::SliderFloat("gravity", &gravity, 0.0f, 10.0f);
+        if (enable_gravity)
+        {
+            for (auto& object : world.Objects())
+            {
+                if (object->InverseMass() > 0.0f)
+                {
+                    object->ApplyImpulse({}, Vec3{0, 1} * gravity / object->InverseMass(), time_step);
+                }
+            }
+        }
 
         static std::shared_ptr<Rigidbody> picked_object;
         static Vec3 picked_offset;
@@ -126,12 +145,27 @@ int main()
         {
             picked_object.reset();
         }
+
+        static bool resolve_collision = true;
+        ImGui::Checkbox("resolve collision", &resolve_collision);
+
+        static bool auto_update = true;
+        ImGui::Checkbox("auto update", &auto_update);
+
+        bool manual_update = ImGui::Button("manual update");
+
         ImGui::End();
 
         // Update
         world.CheckCollisions();
-        world.ResolveCollisions(time_step);
-        world.Update(time_step);
+        if (auto_update || manual_update)
+        {
+            if (resolve_collision)
+            {
+                world.ResolveCollisions(time_step);
+            }
+            world.Update(time_step);
+        }
 
         // Prepare rendering.
         window.clear(sf::Color::White);
@@ -139,11 +173,18 @@ int main()
         // Draw all objects.
         for (auto& object : world.Objects())
         {
+            // Collider.
             auto& shape = object->Collider()->SFMLShape();
             shape.setFillColor(sf::Color::Transparent);
             shape.setOutlineColor(sf::Color::Black);
             shape.setOutlineThickness(2);
             window.draw(shape);
+
+            // Orientation.
+            window.draw(gizmo.Direction(
+                object->Transform().Position(),
+                object->Transform().GlobalDirection({1, 0})
+            ));
         }
 
         // Draw gizmo for object dragging.
