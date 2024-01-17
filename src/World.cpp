@@ -80,6 +80,19 @@ Vec3 RelativeImpactVelocity(const Rigidbody* object1, const Rigidbody* object2, 
     return impact_vel2 - impact_vel1;
 }
 
+/**
+ * @brief Find the magnitude of an impulse vector that will make
+ *        the ratio between relative impact velocity before and after collision
+ *        become @p restitution, which is the coefficient of restitution
+ *        in the Newton's law of restitution.
+ * 
+ * @param rel_impact_pos1 Displacement of contact point from object1's center, in global coordinate.
+ * @param rel_impact_pos2 Displacement of contact point from object2's center, in global coordinate.
+ * @param normal The collision direction.
+ * @param restitution Coefficient of restitution.
+ *                    1.0 results in velocity exchange,
+ *                    while 0.0 results in zero relative velocity.
+ */
 float CalculateCollisionImpulseMagnitude(const Rigidbody* object1, const Rigidbody* object2, const Vec3& rel_impact_pos1, const Vec3& rel_impact_pos2, const Vec3& normal, float restitution)
 {
     const auto velocity_along_normal = RelativeImpactVelocity(object1, object2, rel_impact_pos1, rel_impact_pos2).Dot(normal);
