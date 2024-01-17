@@ -10,7 +10,7 @@ using namespace physics;
 
 /*
 TODO:
-- implement friction
+- implement static friction
 - implement damping
 - implement spring
 - implement object grapping using spring
@@ -21,9 +21,9 @@ TODO:
 std::shared_ptr<Rigidbody> CreateObject(std::shared_ptr<ICollider> collider)
 {
     auto default_mat = MaterialProperties{
-        .restitution = 0.4f,
-        .static_friction = 0.8f,
-        .dynamic_friction = 0.5f
+        .restitution = 0.5f,
+        .static_friction = 0.7f,
+        .dynamic_friction = 0.4f
     };
 
     // Approximate mass and inertia based on the size.
@@ -46,7 +46,8 @@ int main()
 
     auto object1 = CreateObject(std::make_shared<Circle>(20.0f));
     object1->Transform().SetPosition({100, 310});
-    // world.AddObject(object1);
+    // object1->SetInertia(0.0f);
+    world.AddObject(object1);
 
     auto object2 = CreateObject(std::make_shared<ConvexPolygon>(std::vector<Vec3>{
         {-20.0f, -20.0f},
@@ -62,14 +63,14 @@ int main()
         {50.0f, -50.0f},
         {50.0f, 50.0f}
     }));
-    object3->Transform().SetPosition({500, 200});
-    // world.AddObject(object3);
+    object3->Transform().SetPosition({500, 400});
+    world.AddObject(object3);
 
     auto object4 = CreateObject(std::make_shared<ConvexPolygon>(std::vector<Vec3>{
-        {-300.0f, -30.0f},
-        {300.0f, -30.0f},
-        {300.0f, 30.0f},
-        {-300.0f, 30.0f}
+        {-400.0f, -30.0f},
+        {400.0f, -30.0f},
+        {400.0f, 30.0f},
+        {-400.0f, 30.0f}
     }));
     object4->Transform().SetPosition({400, 500});
     object4->MakeObjectStatic();
@@ -92,14 +93,14 @@ int main()
         ImGui::SFML::Update(window, delta_time);
         ImGui::Begin("test window");
         
-        static float drag_force = 2;
-        ImGui::SliderFloat("drag force", &drag_force, 1, 10);
+        static float drag_force = 0.1;
+        ImGui::SliderFloat("drag force", &drag_force, 0.1, 0.5);
 
         static float time_scale = 1.0f;
         ImGui::SliderFloat("time scale", &time_scale, 0.01f, 1.0f);
         auto time_step = delta_time.asSeconds() * time_scale;
 
-        static bool enable_gravity = false;
+        static bool enable_gravity = true;
         ImGui::Checkbox("enable gravity", &enable_gravity);
         static float gravity = 9.8f;
         ImGui::SliderFloat("gravity", &gravity, 0.0f, 10.0f);
@@ -132,7 +133,7 @@ int main()
                 auto rotated_offset = picked_offset;
                 rotated_offset.Rotate(picked_object->Transform().Rotation());
                 obj_to_mouse = Vec3{x, y} - picked_object->Collider()->Transform().GlobalPosition(picked_offset);
-                obj_to_mouse.Normalize();
+                // obj_to_mouse.Normalize();
 
                 // Prevent division by zero if we try to drag a static object.
                 if (picked_object->InverseMass() > 0.0f)

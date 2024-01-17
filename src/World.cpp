@@ -126,18 +126,42 @@ void World::ResolveCollisions(float delta_time)
             const auto normal_impulse_magnitude = -(1 + coef.restitution) * contact_normal_vel / denominator;
             const auto normal_impulse = collision_normal * normal_impulse_magnitude;
 
-            // Calculate friction.
-            auto contact_tangent = rel_impact_vel - rel_impact_vel.Projection(collision_normal);
-            contact_tangent.Normalize();
+            // Handling friction!
+            //
+            // Instead of resisting to the external forces applied during this time step,
+            // we try to correct the nonzero tangential velocity of a collision point, which should have been zero.
+            // Reason: static friction cannot be handled in a single step.
+            //
+            // We first need to find all contacts with zero tangential velocity
+            // and then apply collision impulse, taking static friction into account.
+            //
+            // However, our approach assumes that all collisions are independent
+            // and collision resolution is done in arbitrary order.
+            //
+            // Therefore, the second best thing we can do is applying additional force
+            // that will make the tangential contact velocity zero.
+            // Except that we have one time step of delay,
+            // it basically does what a static friction would have done.
+            //
+            // How can we calculate the right amount of force?
+            // Well, use the same formula as the regular collision impact!
+            // Replacing collision normal to collision tangent, and coefficient of restitution to 0 will work.
+            auto collision_tangent = rel_impact_vel - rel_impact_vel.Projection(collision_normal);
+            collision_tangent.Normalize();
 
-            // Tangential velocity was nonzero, so dynamic friction comes in.
-            const auto contact_tangent_vel = rel_impact_vel.Dot(contact_tangent);
-            auto tangential_impulse_magnitude = 0.0f;
-            if (contact_tangent_vel > epsilon)
+            const auto collision_tangent_vel = rel_impact_vel.Dot(collision_tangent);            
+            const auto denominator2 =
+                inv_mass1 + inv_mass2
+                + rel_impact_pos1.Cross(collision_tangent).SquaredMagnitude() * obj1->InverseInertia()
+                + rel_impact_pos2.Cross(collision_tangent).SquaredMagnitude() * obj2->InverseInertia();
+            auto tangential_impulse_magnitude = -collision_tangent_vel / denominator2;
+
+            // Dynamic friction
+            if (tangential_impulse_magnitude > normal_impulse_magnitude * coef.static_friction)
             {
                 tangential_impulse_magnitude = normal_impulse_magnitude * coef.dynamic_friction;
             }
-            const auto tangential_impulse = -contact_tangent * tangential_impulse_magnitude;
+            const auto tangential_impulse = collision_tangent * tangential_impulse_magnitude;
 
             // Reason for dividing impulse for this contact point by contact size:
             //   We might have multiple impact points per collision!
