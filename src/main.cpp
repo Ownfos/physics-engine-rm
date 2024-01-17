@@ -10,7 +10,6 @@ using namespace physics;
 
 /*
 TODO:
-- clean up collision resolution code
 - implement damping
 - implement spring
 - implement object grapping using spring
@@ -21,9 +20,9 @@ TODO:
 std::shared_ptr<Rigidbody> CreateObject(std::shared_ptr<ICollider> collider)
 {
     auto default_mat = MaterialProperties{
-        .restitution = 0.5f,
-        .static_friction = 0.7f,
-        .dynamic_friction = 0.4f
+        .restitution = 0.7f,
+        .static_friction = 0.6f,
+        .dynamic_friction = 0.3f
     };
 
     // Approximate mass and inertia based on the size.
@@ -145,6 +144,12 @@ int main()
         else if (ImGui::IsMouseReleased(ImGuiMouseButton_Left))
         {
             picked_object.reset();
+        }
+
+        static float ground_rotation = 0.0f;
+        if (ImGui::SliderFloat("ground rotation", &ground_rotation, -45.0f, 45.0f))
+        {
+            object4->Transform().SetRotation(deg2rad(ground_rotation));
         }
 
         static bool resolve_collision = true;

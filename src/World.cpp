@@ -70,40 +70,48 @@ void World::CheckCollisions()
     }
 }
 
+Vec3 RelativeImpactVelocity(const Rigidbody* object1, const Rigidbody* object2, const Vec3& rel_impact_pos1, const Vec3& rel_impact_pos2)
+{
+    // The global velocity of impact points.
+    const auto impact_vel1 = object1->GlobalVelocity(rel_impact_pos1);
+    const auto impact_vel2 = object2->GlobalVelocity(rel_impact_pos2);
+
+    // Relative impact velocity of object2 in object1's perspective.
+    return impact_vel2 - impact_vel1;
+}
+
+float CalculateCollisionImpulseMagnitude(const Rigidbody* object1, const Rigidbody* object2, const Vec3& rel_impact_pos1, const Vec3& rel_impact_pos2, const Vec3& normal, float restitution)
+{
+    const auto velocity_along_normal = RelativeImpactVelocity(object1, object2, rel_impact_pos1, rel_impact_pos2).Dot(normal);
+
+    const auto denominator =
+        object1->InverseMass() + object2->InverseMass()
+        + rel_impact_pos1.Cross(normal).SquaredMagnitude() * object1->InverseInertia()
+        + rel_impact_pos2.Cross(normal).SquaredMagnitude() * object2->InverseInertia();
+
+    return -(1 + restitution) * velocity_along_normal / denominator;
+}
+
 void World::ResolveCollisions(float delta_time)
 {
     for (const auto& collision : m_collisions)
     {
         // Shorthand notation for objects in contact.
-        auto& obj1 = collision.object1;
-        auto& obj2 = collision.object2;
+        auto& object1 = collision.object1;
+        auto& object2 = collision.object2;
 
         // Choose the physical constants like friction coefficient.
-        const auto& mat1 = obj1->Material();
-        const auto& mat2 = obj2->Material();
-        const auto coef = mat1.Average(mat2);
-
-        // Get the inverse mass.
-        const auto inv_mass1 = obj1->InverseMass();
-        const auto inv_mass2 = obj2->InverseMass();
+        const auto coef = object1->Material().Average(object2->Material());
 
         for (const auto& contact : collision.info.contacts)
         {
             // Local coordinates of the position where
             // the collision impulse will be applied to.
-            const auto rel_impact_pos1 = contact - obj1->Transform().Position();
-            const auto rel_impact_pos2 = contact - obj2->Transform().Position();
+            const auto rel_impact_pos1 = contact - object1->Transform().Position();
+            const auto rel_impact_pos2 = contact - object2->Transform().Position();
 
-            // The global velocity of impact points.
-            const auto impact_vel1 = obj1->GlobalVelocity(rel_impact_pos1);
-            const auto impact_vel2 = obj2->GlobalVelocity(rel_impact_pos2);
-
-            // Relative impact velocity of object2 in object1's perspective.
-            const auto rel_impact_vel = impact_vel2 - impact_vel1;
-
-            // Relative impact velocity along collision normal.
-            auto collision_normal = collision.info.normal;
-            const auto contact_normal_vel = rel_impact_vel.Dot(collision_normal);
+            const auto normal_impulse_magnitude = CalculateCollisionImpulseMagnitude(object1, object2, rel_impact_pos1, rel_impact_pos2, collision.info.normal, coef.restitution);
+            const auto normal_impulse = collision.info.normal * normal_impulse_magnitude;
 
             // Leave the objects if they already moving away.
             // This prevents situation where we get locked inside a wall.
@@ -113,55 +121,52 @@ void World::ResolveCollisions(float delta_time)
             //  But B comes in and pushes A back inside to the wall.
             //  Now the velocity of A is headed towards the right side
             //  and our impulse will have opposite effect: pushing A to the wall!
-            if (contact_normal_vel > 0.0f)
+            if (normal_impulse_magnitude < 0.0f)
             {
                 continue;
             }
 
-            // TODO: add description on  how this equation was derived...
-            const auto denominator =
-                inv_mass1 + inv_mass2
-                + rel_impact_pos1.Cross(collision_normal).SquaredMagnitude() * obj1->InverseInertia()
-                + rel_impact_pos2.Cross(collision_normal).SquaredMagnitude() * obj2->InverseInertia();
-            const auto normal_impulse_magnitude = -(1 + coef.restitution) * contact_normal_vel / denominator;
-            const auto normal_impulse = collision_normal * normal_impulse_magnitude;
-
             // Handling friction!
+            // First, find the tangential vector opposite to the relative impact velocity.
+            // Note: friction is always resistant (thereby opposite) to the tangential velocity.
+            const auto rel_impact_vel = RelativeImpactVelocity(object1, object2, rel_impact_pos1, rel_impact_pos2);
+            auto friction_direction = -(rel_impact_vel - rel_impact_vel.Projection(collision.info.normal));
+            friction_direction.Normalize();
+
+            // Now that we know the direction of friction force,
+            // we need to calculate the magnitude of friction.
             //
             // Instead of resisting to the external forces applied during this time step,
             // we try to correct the nonzero tangential velocity of a collision point, which should have been zero.
-            // Reason: static friction cannot be handled in a single step.
             //
-            // We first need to find all contacts with zero tangential velocity
-            // and then apply collision impulse, taking static friction into account.
+            // Reason:
+            //   Static friction cannot be handled in a single step.
             //
-            // However, our approach assumes that all collisions are independent
-            // and collision resolution is done in arbitrary order.
+            //   We first need to find all contacts with zero tangential velocity
+            //   and then apply collision impulse, taking static friction into account.
             //
-            // Therefore, the second best thing we can do is applying additional force
-            // that will make the tangential contact velocity zero.
-            // Except that we have one time step of delay,
-            // it basically does what a static friction would have done.
+            //   However, our approach assumes that all collisions are independent
+            //   and collision resolution is done in arbitrary order.
+            //
+            //   Therefore, the second best thing we can do is applying additional force
+            //   that will make the tangential contact velocity zero.
+            //   Except that we have one time step of delay,
+            //   it basically does what a static friction would have done.
             //
             // How can we calculate the right amount of force?
             // Well, use the same formula as the regular collision impact!
             // Replacing collision normal to collision tangent, and coefficient of restitution to 0 will work.
-            auto collision_tangent = rel_impact_vel - rel_impact_vel.Projection(collision_normal);
-            collision_tangent.Normalize();
+            auto tangential_impulse_magnitude = CalculateCollisionImpulseMagnitude(object1, object2, rel_impact_pos1, rel_impact_pos2, friction_direction, 0.0f);
 
-            const auto collision_tangent_vel = rel_impact_vel.Dot(collision_tangent);            
-            const auto denominator2 =
-                inv_mass1 + inv_mass2
-                + rel_impact_pos1.Cross(collision_tangent).SquaredMagnitude() * obj1->InverseInertia()
-                + rel_impact_pos2.Cross(collision_tangent).SquaredMagnitude() * obj2->InverseInertia();
-            auto tangential_impulse_magnitude = -collision_tangent_vel / denominator2;
-
-            // Dynamic friction
-            if (tangential_impulse_magnitude > normal_impulse_magnitude * coef.static_friction)
+            // If the force required to make tangential contact velocity
+            // is greater than the maximum static friction force,
+            // we must be using dynamic friction instead.
+            const auto max_static_friction_magnitude = normal_impulse_magnitude * coef.static_friction;
+            if (tangential_impulse_magnitude > max_static_friction_magnitude)
             {
                 tangential_impulse_magnitude = normal_impulse_magnitude * coef.dynamic_friction;
             }
-            const auto tangential_impulse = collision_tangent * tangential_impulse_magnitude;
+            const auto tangential_impulse = friction_direction * tangential_impulse_magnitude;
 
             // Reason for dividing impulse for this contact point by contact size:
             //   We might have multiple impact points per collision!
@@ -178,8 +183,8 @@ void World::ResolveCollisions(float delta_time)
 
             // Due to the law of action and reaction,
             // the magnitude of impulse is same but the direction is opposite.
-            obj1->ApplyImpulse(rel_impact_pos1, -total_impulse, delta_time);
-            obj2->ApplyImpulse(rel_impact_pos2, total_impulse, delta_time);
+            object1->ApplyImpulse(rel_impact_pos1, -total_impulse, delta_time);
+            object2->ApplyImpulse(rel_impact_pos2, total_impulse, delta_time);
         }
 
         // Perform positional correction.
@@ -197,9 +202,9 @@ void World::ResolveCollisions(float delta_time)
             // The total translation required to separate objects
             // is distributed according to the ratio of inverse mass.
             // This makes heavy objects stable, while light objects move more.
-            const auto inv_mass_ratio = inv_mass1 / (inv_mass1 + inv_mass2);
-            obj1->Transform().AddPosition(- required_translation * inv_mass_ratio);
-            obj2->Transform().AddPosition(required_translation * (1.0f - inv_mass_ratio));
+            const auto inv_mass_ratio = object1->InverseMass() / (object1->InverseMass() + object2->InverseMass());
+            object1->Transform().AddPosition(- required_translation * inv_mass_ratio);
+            object2->Transform().AddPosition(required_translation * (1.0f - inv_mass_ratio));
         }
     }
 }
