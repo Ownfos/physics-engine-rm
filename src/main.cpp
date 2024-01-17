@@ -10,7 +10,7 @@ using namespace physics;
 
 /*
 TODO:
-- implement static friction
+- clean up collision resolution code
 - implement damping
 - implement spring
 - implement object grapping using spring
