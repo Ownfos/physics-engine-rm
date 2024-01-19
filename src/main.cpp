@@ -5,6 +5,7 @@
 #include "ConvexPolygon.h"
 #include "Gizmo.h"
 #include "World.h"
+#include "UI.h"
 
 using namespace physics;
 
@@ -42,6 +43,8 @@ int main()
 
     auto gizmo = Gizmo();
     auto world = World();
+    auto ui = UI();
+    auto dragger = ObjectDragger();
 
     auto object1 = CreateObject(std::make_shared<Circle>(20.0f));
     object1->Transform().SetPosition({100, 310});
@@ -90,86 +93,36 @@ int main()
         // UI and object dragging.
         auto delta_time = deltaClock.restart();
         ImGui::SFML::Update(window, delta_time);
-        ImGui::Begin("test window");
-        
-        static float drag_force = 0.1;
-        ImGui::SliderFloat("drag force", &drag_force, 0.1, 0.5);
+        ui.UpdateGUI();
+        ui.UpdateObjectDragger(dragger, world);
 
-        static float time_scale = 1.0f;
-        ImGui::SliderFloat("time scale", &time_scale, 0.01f, 1.0f);
-        auto time_step = delta_time.asSeconds() * time_scale;
-
-        static bool enable_gravity = true;
-        ImGui::Checkbox("enable gravity", &enable_gravity);
-        static float gravity = 9.8f;
-        ImGui::SliderFloat("gravity", &gravity, 0.0f, 10.0f);
-        if (enable_gravity)
-        {
-            for (auto& object : world.Objects())
-            {
-                if (object->InverseMass() > 0.0f)
-                {
-                    object->ApplyImpulse({}, Vec3{0, 1} * gravity / object->InverseMass(), time_step);
-                }
-            }
-        }
-
-        static std::shared_ptr<Rigidbody> picked_object;
-        static Vec3 picked_offset;
-        static Vec3 obj_to_mouse;
-        auto [x, y] = ImGui::GetMousePos();
-        if (ImGui::IsMouseClicked(ImGuiMouseButton_Left))
-        {
-            if (picked_object = world.PickObject({x, y}))
-            {
-                picked_offset = picked_object->Collider()->Transform().LocalPosition({x, y});
-            }
-        }
-        else if (ImGui::IsMouseDown(ImGuiMouseButton_Left))
-        {
-            if (picked_object)
-            {
-                auto rotated_offset = picked_offset;
-                rotated_offset.Rotate(picked_object->Transform().Rotation());
-                obj_to_mouse = Vec3{x, y} - picked_object->Collider()->Transform().GlobalPosition(picked_offset);
-                // obj_to_mouse.Normalize();
-
-                // Prevent division by zero if we try to drag a static object.
-                if (picked_object->InverseMass() > 0.0f)
-                {
-                    picked_object->ApplyImpulse(rotated_offset, obj_to_mouse * drag_force / picked_object->InverseMass(), time_step);
-                }
-            }
-        }
-        else if (ImGui::IsMouseReleased(ImGuiMouseButton_Left))
-        {
-            picked_object.reset();
-        }
-
-        static float ground_rotation = 0.0f;
-        if (ImGui::SliderFloat("ground rotation", &ground_rotation, -45.0f, 45.0f))
-        {
-            object4->Transform().SetRotation(deg2rad(ground_rotation));
-        }
-
-        static bool resolve_collision = true;
-        ImGui::Checkbox("resolve collision", &resolve_collision);
-
-        static bool auto_update = true;
-        ImGui::Checkbox("auto update", &auto_update);
-
-        bool manual_update = ImGui::Button("manual update");
-
-        ImGui::End();
+        auto time_step = delta_time.asSeconds() * ui.TimeScale();
 
         // Update
         world.CheckCollisions();
-        if (auto_update || manual_update)
+        if (ui.IsUpdateRequired())
         {
-            if (resolve_collision)
+            if (ui.IsCollisionEnabled())
             {
                 world.ResolveCollisions(time_step);
             }
+
+            if (dragger.IsObjectSelected())
+            {
+                dragger.ApplyDraggingForce(ui.DragStrength(), time_step);
+            }
+
+            if (ui.IsGravityEnabled())
+            {
+                for (auto& object : world.Objects())
+                {
+                    if (object->InverseMass() > 0.0f)
+                    {
+                        object->ApplyImpulse({}, Vec3{0, ui.GravityStrength() / object->InverseMass()}, time_step);
+                    }
+                }
+            }
+
             world.Update(time_step);
         }
 
@@ -194,13 +147,12 @@ int main()
         }
 
         // Draw gizmo for object dragging.
-        if (picked_object)
+        if (dragger.IsObjectSelected())
         {
-            window.draw(gizmo.Point({x, y}));
+            window.draw(gizmo.Point(ui.MousePosition()));
 
-            const auto picked_point = picked_object->Transform().GlobalPosition(picked_offset);
-            window.draw(gizmo.Point(picked_point));
-            window.draw(gizmo.Direction(picked_point, obj_to_mouse, sf::Color::Blue));
+            window.draw(gizmo.Point(dragger.PickedPoint()));
+            window.draw(gizmo.Direction(dragger.PickedPoint(), dragger.DragVector(), sf::Color::Blue));
         }
 
         // Draw contact points for all collisions.

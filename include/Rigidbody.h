@@ -136,6 +136,11 @@ public:
     bool IsPointInside(const Vec3& global_pos) const;
 
     /**
+     * @brief Test if this object has infinite mass and inertia.
+     */
+    bool IsStatic() const;
+
+    /**
      * @return The velocity of a point inside this rigidbody
      *         expressed in global coordinate system.
     */

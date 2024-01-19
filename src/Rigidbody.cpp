@@ -75,6 +75,11 @@ bool Rigidbody::IsPointInside(const Vec3& global_pos) const
     return Collider()->IsPointInside(Collider()->Transform().LocalPosition(global_pos));
 }
 
+bool Rigidbody::IsStatic() const
+{
+    return m_inv_mass < epsilon && m_inv_inertia < epsilon;
+}
+
 Vec3 Rigidbody::GlobalVelocity(const Vec3& local_pos) const
 {
     return LinearVelocity() + AngularVelocity().Cross(local_pos);
