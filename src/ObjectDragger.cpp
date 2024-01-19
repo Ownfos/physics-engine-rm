@@ -50,11 +50,15 @@ bool ObjectDragger::IsObjectSelected() const
 
 Vec3 ObjectDragger::PickedPoint() const
 {
+    assert(IsObjectSelected());
+
     return m_picked_object->Transform().GlobalPosition(m_picked_offset);
 }
 
 Vec3 ObjectDragger::DragVector() const
 {
+    assert(IsObjectSelected());
+    
     return m_drag_vector;
 }
 
