@@ -196,6 +196,13 @@ public:
     void ApplyImpulse(const Vec3& rel_impact_pos, const Vec3& impulse, float delta_time);
 
     /**
+     * @brief Reduce the linear and angular velocity by given factor.
+     * 
+     * @note Damping helps stabilizing simulation with lots of external forces.
+     */
+    void ApplyDamping(float linear_damping, float angular_damping);
+
+    /**
      * @brief Perform explicit euler integration on linear and angular disposition.
      * 
      * @param delta_time The time step between previous and current frame.

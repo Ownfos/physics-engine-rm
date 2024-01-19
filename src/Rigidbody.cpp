@@ -177,6 +177,12 @@ void Rigidbody::ApplyImpulse(const Vec3& rel_impact_pos, const Vec3& impulse, fl
     m_acceleration.linear += force_over_time * m_inv_mass;
 }
 
+void Rigidbody::ApplyDamping(float linear_damping, float angular_damping)
+{
+    m_velocity.linear *= (1.0f - linear_damping);
+    m_velocity.angular *= (1.0f - angular_damping);
+}
+
 void Rigidbody::Update(float delta_time)
 {
     auto& transform = Transform();

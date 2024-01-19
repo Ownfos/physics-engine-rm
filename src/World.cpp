@@ -28,6 +28,15 @@ void World::ConfigurePositionalCorrection(float penetration_allowance, float cor
     m_correction_ratio = correction_ratio;
 }
 
+void World::ConfigureDamping(float linear_damping, float angular_damping)
+{
+    assert(linear_damping >= 0.0f && linear_damping < 1.0f);
+    assert(angular_damping >= 0.0f && angular_damping < 1.0f);
+
+    m_linear_damping = linear_damping;
+    m_angular_damping = angular_damping;
+}
+
 void World::AddObject(std::shared_ptr<Rigidbody> object)
 {
     m_objects.push_back(object);
@@ -227,6 +236,7 @@ void World::Update(float delta_time)
     for (const auto& obj : m_objects)
     {
         obj->Update(delta_time);
+        obj->ApplyDamping(m_linear_damping, m_angular_damping);
     }
 }
 

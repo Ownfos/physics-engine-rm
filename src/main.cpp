@@ -1,5 +1,4 @@
 #include "SFML/Graphics.hpp"
-#include "imgui.h"
 #include "imgui-SFML.h"
 #include "Circle.h"
 #include "ConvexPolygon.h"
@@ -11,7 +10,6 @@ using namespace physics;
 
 /*
 TODO:
-- implement damping
 - implement spring
 - implement object grapping using spring
 - implement dynamic object creation using GUI and mouse clicks
@@ -123,6 +121,7 @@ int main()
                 }
             }
 
+            world.ConfigureDamping(ui.LinearDamping(), ui.AngularDamping());
             world.Update(time_step);
         }
 

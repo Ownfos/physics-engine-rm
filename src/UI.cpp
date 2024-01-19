@@ -13,7 +13,9 @@ void UI::UpdateGUI()
     {
         ImGui::SliderFloat("gravity strength", &m_gravity_strength, 0.0f, 10.0f);
     }
-    ImGui::SliderFloat("drag strength", &m_drag_strength, 0.1, 0.5);
+    ImGui::SliderFloat("drag strength", &m_drag_strength, 0.1f, 0.5f);
+    ImGui::SliderFloat("linear damping", &m_linear_damping, 0.0f, 0.1f);
+    ImGui::SliderFloat("angular damping", &m_angular_damping, 0.0f, 0.1f);
     ImGui::Checkbox("resolve collision", &m_enable_collision);
     ImGui::Checkbox("auto update", &m_enable_update);
     m_update_one_step = m_enable_update ? false : ImGui::Button("manual update");
@@ -65,6 +67,16 @@ float UI::DragStrength() const
 float UI::GravityStrength() const
 {
     return m_gravity_strength;
+}
+
+float UI::LinearDamping() const
+{
+    return m_linear_damping;
+}
+
+float UI::AngularDamping() const
+{
+    return m_angular_damping;
 }
 
 Vec3 UI::MousePosition() const

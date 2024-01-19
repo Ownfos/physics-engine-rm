@@ -46,6 +46,16 @@ public:
     void ConfigurePositionalCorrection(float penetration_allowance, float correction_ratio);
 
     /**
+     * @brief Change the magnitude of linear and angular velocity damping.
+     * 
+     * @param linear_damping Percentage of current linear velocity.
+     * @param angular_damping Percentage of current angular velocity.
+     * 
+     * @note For example, @p linear_damping of 0.1 will reduce velocity up to 90%.
+     */
+    void ConfigureDamping(float linear_damping, float angular_damping);
+
+    /**
      * @brief Add and remove a rigidbody from this simulator.
      */
     void AddObject(std::shared_ptr<Rigidbody> object);
@@ -100,6 +110,13 @@ private:
      */
     float m_penetration_allowance = 0.05f;
     float m_correction_ratio = 0.4f;
+
+    /**
+     * @brief Parameters for velocity damping.
+     * @see World::ConfigureDamping()
+     */
+    float m_linear_damping = 0.0f;
+    float m_angular_damping = 0.0f;
 };
 
 } // namespace physics
