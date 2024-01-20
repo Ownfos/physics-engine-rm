@@ -60,7 +60,7 @@ private:
     std::vector<std::shared_ptr<IMouseAction>> m_mouse_actions;
 
     // The action executed in response to mouse clicks.
-    std::shared_ptr<IMouseAction> m_active_mouse_action;
+    int m_active_mouse_action_index = 0;
 };
 
 } // namespace physics

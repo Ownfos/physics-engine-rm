@@ -18,6 +18,7 @@ public:
     PolygonDrawer(std::shared_ptr<World> world, float draw_finish_distance = 20.0f);
 
     virtual std::string Description() const override;
+    virtual std::string Tooltip() const override;
 
     virtual void OnMouseClick(const Vec3& mouse_pos) override;
     virtual void OnMouseDown(const Vec3& mouse_pos) override;

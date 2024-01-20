@@ -17,6 +17,7 @@ public:
     ObjectDragger(std::shared_ptr<World> world);
 
     virtual std::string Description() const override;
+    virtual std::string Tooltip() const override;
 
     /**
      * @brief Try to pick an object under the cursor.

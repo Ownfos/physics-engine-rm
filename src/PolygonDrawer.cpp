@@ -11,7 +11,15 @@ PolygonDrawer::PolygonDrawer(std::shared_ptr<World> world, float draw_finish_dis
 
 std::string PolygonDrawer::Description() const
 {
-    return "draw new convex polygon object";
+    return "Draw new convex polygon object";
+}
+
+std::string PolygonDrawer::Tooltip() const
+{
+    return
+        "Click screen in clockwise order to record vertices.\n"
+        "To finish drawing and spawn current polygon shape,\n"
+        "click the point near the first vertex.";
 }
 
 void PolygonDrawer::OnMouseClick(const Vec3& mouse_pos)

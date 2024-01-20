@@ -16,6 +16,7 @@ public:
     virtual ~IMouseAction() = default;
 
     virtual std::string Description() const = 0;
+    virtual std::string Tooltip() const = 0;
 
     virtual void OnMouseClick(const Vec3& mouse_pos) = 0;
     virtual void OnMouseDown(const Vec3& mouse_pos) = 0;

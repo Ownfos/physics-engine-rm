@@ -10,7 +10,11 @@ ObjectDragger::ObjectDragger(std::shared_ptr<World> world)
 
 std::string ObjectDragger::Description() const
 {
-    return "drag objects";
+    return "Drag objects";
+}
+std::string ObjectDragger::Tooltip() const
+{
+    return "Click and drag an object to pull them";
 }
 
 void ObjectDragger::OnMouseClick(const Vec3& mouse_pos)

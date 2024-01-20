@@ -14,9 +14,20 @@ void UI::DrawUI()
 {
     ImGui::Begin("Options");
 
+    ImGui::SeparatorText("Mouse Action");
+    for (int i = 0; i < m_mouse_actions.size(); ++i)
+    {
+        ImGui::RadioButton(m_mouse_actions[i]->Description().c_str(), &m_active_mouse_action_index, i);
+        if (ImGui::IsItemHovered())
+        {
+            ImGui::SetTooltip(m_mouse_actions[i]->Tooltip().c_str());
+        }
+    }
+    ImGui::NewLine();
+
     ImGui::SeparatorText("Basics");
     ImGui::SliderFloat("time scale", &m_time_scale, 0.01f, 1.0f);
-    ImGui::SliderFloat("object dragging strength", &m_drag_strength, 0.1f, 0.5f);
+    ImGui::SliderFloat("dragging strength", &m_drag_strength, 0.1f, 0.5f);
     ImGui::Checkbox("resolve collision", &m_enable_collision);
     ImGui::Checkbox("auto update", &m_enable_update);
     m_update_one_step = m_enable_update ? false : ImGui::Button("manual update");
@@ -36,51 +47,36 @@ void UI::DrawUI()
     ImGui::SliderFloat("angular damping", &m_angular_damping, 0.0f, 0.1f);
     ImGui::NewLine();
 
-    ImGui::SeparatorText("Change Click Mode");
-    for (auto& mouse_action : m_mouse_actions)
-    {
-        if (ImGui::Button(mouse_action->Description().c_str()))
-        {
-            m_active_mouse_action = mouse_action;
-        }
-    }
-    ImGui::NewLine();
-
     ImGui::End();
 }
 
 void UI::HandleMouseAction()
 {
     // Do nothing if no action is registered yet.
-    if (m_active_mouse_action == nullptr)
+    if (m_mouse_actions.empty())
     {
         return;
     }
 
     const auto mouse_pos = MousePosition();
+    auto& action = m_mouse_actions[m_active_mouse_action_index];
     if (ImGui::IsMouseClicked(ImGuiMouseButton_Left))
     {
-        m_active_mouse_action->OnMouseClick(mouse_pos);
+        action->OnMouseClick(mouse_pos);
     }
     else if (ImGui::IsMouseDown(ImGuiMouseButton_Left))
     {
-        m_active_mouse_action->OnMouseDown(mouse_pos);
+        action->OnMouseDown(mouse_pos);
     }
     else if (ImGui::IsMouseReleased(ImGuiMouseButton_Left))
     {
-        m_active_mouse_action->OnMouseRelease(mouse_pos);
+        action->OnMouseRelease(mouse_pos);
     }
 }
 
 void UI::AddMouseActionType(std::shared_ptr<IMouseAction> mouse_action)
 {
     m_mouse_actions.push_back(mouse_action);
-
-    // Use the first action as a default choice.
-    if (m_active_mouse_action == nullptr)
-    {
-        m_active_mouse_action = mouse_action;
-    }
 }
 
 bool UI::IsGravityEnabled() const
