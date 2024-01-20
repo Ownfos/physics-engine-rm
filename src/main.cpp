@@ -6,6 +6,7 @@
 #include "world.h"
 #include "UI.h"
 #include "ObjectDragger.h"
+#include "PolygonDrawer.h"
 
 using namespace physics;
 
@@ -43,7 +44,9 @@ int main()
     auto ui = UI();
     auto world = std::make_shared<World>();
     auto dragger = std::make_shared<ObjectDragger>(world);
-    ui.SetMouseAction(dragger);
+    auto drawer = std::make_shared<PolygonDrawer>(world);
+    // ui.SetMouseAction(dragger);
+    ui.SetMouseAction(drawer);
 
     auto object1 = CreateObject(std::make_shared<Circle>(20.0f));
     object1->Transform().SetPosition({100, 310});
@@ -152,6 +155,12 @@ int main()
 
             window.draw(gizmo.Point(dragger->PickedPoint()));
             window.draw(gizmo.Direction(dragger->PickedPoint(), dragger->DragVector(), sf::Color::Blue));
+        }
+
+        // Draw gizmo for polygon drawing.
+        for (const auto& vertex : drawer->CurrentVertices())
+        {
+            window.draw(gizmo.Point(vertex, sf::Color::Magenta));
         }
 
         // Draw contact points for all collisions.
