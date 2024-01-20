@@ -152,6 +152,12 @@ std::optional<CollisionPair> Rigidbody::CheckCollision(Rigidbody& other)
         return {};
     }
 
+    // Nothing should happen if two static objects overlap.
+    if (IsStatic() && other.IsStatic())
+    {
+        return {};
+    }
+
     auto result = Collider()->CheckCollision(other.Collider());
     if (result)
     {
