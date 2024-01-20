@@ -2,6 +2,7 @@
 #define PHYSICS_UI_H
 
 #include "IMouseAction.h"
+#include <vector>
 #include <memory>
 
 namespace physics
@@ -21,11 +22,11 @@ public:
     void Update();
 
     /**
-     * @brief Change how we react to the mouse clicks.
+     * @brief Add an option for mouse click handler.
      * 
      * @param mouse_action A pointer to an instance of IMouseAction child class.
      */
-    void SetMouseAction(std::shared_ptr<IMouseAction> mouse_action);
+    void AddMouseActionType(std::shared_ptr<IMouseAction> mouse_action);
 
     bool IsUpdateRequired() const;
     bool IsGravityEnabled() const;
@@ -54,8 +55,12 @@ private:
     float m_linear_damping = 0.0f;
     float m_angular_damping = 0.0f;
 
+    // List of all possible actions for mouse clicks.
+    // One of them will be chosen and set as m_active_mouse_action.
+    std::vector<std::shared_ptr<IMouseAction>> m_mouse_actions;
+
     // The action executed in response to mouse clicks.
-    std::shared_ptr<IMouseAction> m_mouse_action;
+    std::shared_ptr<IMouseAction> m_active_mouse_action;
 };
 
 } // namespace physics

@@ -8,6 +8,11 @@ ObjectDragger::ObjectDragger(std::shared_ptr<World> world)
     : m_world(world)
 {}
 
+std::string ObjectDragger::Description() const
+{
+    return "drag objects";
+}
+
 void ObjectDragger::OnMouseClick(const Vec3& mouse_pos)
 {
     if (m_picked_object = m_world->PickObject(mouse_pos))

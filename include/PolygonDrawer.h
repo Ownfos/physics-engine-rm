@@ -15,7 +15,9 @@ public:
      *                             required to finish drawing and try to create a rigidbody.
      *                             Any point within this radius from the first vertex is considered the last vertex.
      */
-    PolygonDrawer(std::shared_ptr<World> world, float draw_finish_distance = 10.0f);
+    PolygonDrawer(std::shared_ptr<World> world, float draw_finish_distance = 20.0f);
+
+    virtual std::string Description() const override;
 
     virtual void OnMouseClick(const Vec3& mouse_pos) override;
     virtual void OnMouseDown(const Vec3& mouse_pos) override;

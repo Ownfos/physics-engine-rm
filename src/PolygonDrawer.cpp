@@ -9,6 +9,11 @@ PolygonDrawer::PolygonDrawer(std::shared_ptr<World> world, float draw_finish_dis
     : m_world(world), m_draw_finish_distance(draw_finish_distance)
 {}
 
+std::string PolygonDrawer::Description() const
+{
+    return "draw new convex polygon object";
+}
+
 void PolygonDrawer::OnMouseClick(const Vec3& mouse_pos)
 {
     if (IsDrawingFinished(mouse_pos))

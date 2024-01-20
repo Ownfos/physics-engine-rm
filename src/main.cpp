@@ -41,12 +41,13 @@ int main()
     if (!ImGui::SFML::Init(window)) return -1;
 
     auto gizmo = Gizmo();
-    auto ui = UI();
     auto world = std::make_shared<World>();
     auto dragger = std::make_shared<ObjectDragger>(world);
     auto drawer = std::make_shared<PolygonDrawer>(world);
-    // ui.SetMouseAction(dragger);
-    ui.SetMouseAction(drawer);
+
+    auto ui = UI();
+    ui.AddMouseActionType(dragger);
+    ui.AddMouseActionType(drawer);
 
     auto object1 = CreateObject(std::make_shared<Circle>(20.0f));
     object1->Transform().SetPosition({100, 310});
