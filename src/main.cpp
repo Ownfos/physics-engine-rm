@@ -13,7 +13,6 @@ using namespace physics;
 /*
 TODO:
 - implement spring
-- implement dynamic object creation using GUI and mouse clicks
 - add description about the math stuff used to derive equation for impulse magnitude...
 */
 
