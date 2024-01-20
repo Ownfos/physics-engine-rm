@@ -3,8 +3,9 @@
 #include "Circle.h"
 #include "ConvexPolygon.h"
 #include "Gizmo.h"
-#include "World.h"
+#include "world.h"
 #include "UI.h"
+#include "ObjectDragger.h"
 
 using namespace physics;
 
@@ -39,14 +40,15 @@ int main()
     if (!ImGui::SFML::Init(window)) return -1;
 
     auto gizmo = Gizmo();
-    auto world = World();
     auto ui = UI();
-    auto dragger = ObjectDragger();
+    auto world = std::make_shared<World>();
+    auto dragger = std::make_shared<ObjectDragger>(world);
+    ui.SetMouseAction(dragger);
 
     auto object1 = CreateObject(std::make_shared<Circle>(20.0f));
     object1->Transform().SetPosition({100, 310});
     // object1->SetInertia(0.0f);
-    world.AddObject(object1);
+    world->AddObject(object1);
 
     auto object2 = CreateObject(std::make_shared<ConvexPolygon>(std::vector<Vec3>{
         {-20.0f, -20.0f},
@@ -55,7 +57,7 @@ int main()
         {-20.0f, 20.0f}
     }));
     object2->Transform().SetPosition({150, 400});
-    world.AddObject(object2);
+    world->AddObject(object2);
 
     auto object3 = CreateObject(std::make_shared<ConvexPolygon>(std::vector<Vec3>{
         {-50.0f, -50.0f},
@@ -63,7 +65,7 @@ int main()
         {50.0f, 50.0f}
     }));
     object3->Transform().SetPosition({500, 400});
-    world.AddObject(object3);
+    world->AddObject(object3);
 
     auto object4 = CreateObject(std::make_shared<ConvexPolygon>(std::vector<Vec3>{
         {-400.0f, -30.0f},
@@ -73,7 +75,7 @@ int main()
     }));
     object4->Transform().SetPosition({400, 500});
     object4->MakeObjectStatic();
-    world.AddObject(object4);
+    world->AddObject(object4);
 
     sf::Clock deltaClock;
     while (window.isOpen())
@@ -90,28 +92,27 @@ int main()
         // UI and object dragging.
         auto delta_time = deltaClock.restart();
         ImGui::SFML::Update(window, delta_time);
-        ui.UpdateGUI();
-        ui.UpdateObjectDragger(dragger, world);
+        ui.Update();
 
         auto time_step = delta_time.asSeconds() * ui.TimeScale();
 
         // Update
-        world.CheckCollisions();
+        world->CheckCollisions();
         if (ui.IsUpdateRequired())
         {
             if (ui.IsCollisionEnabled())
             {
-                world.ResolveCollisions(time_step);
+                world->ResolveCollisions(time_step);
             }
 
-            if (dragger.IsObjectSelected())
+            if (dragger->IsObjectSelected())
             {
-                dragger.ApplyDraggingForce(ui.DragStrength(), time_step);
+                dragger->ApplyDraggingForce(ui.DragStrength(), time_step);
             }
 
             if (ui.IsGravityEnabled())
             {
-                for (auto& object : world.Objects())
+                for (auto& object : world->Objects())
                 {
                     if (object->InverseMass() > 0.0f)
                     {
@@ -120,15 +121,15 @@ int main()
                 }
             }
 
-            world.ConfigureDamping(ui.LinearDamping(), ui.AngularDamping());
-            world.Update(time_step);
+            world->ConfigureDamping(ui.LinearDamping(), ui.AngularDamping());
+            world->Update(time_step);
         }
 
         // Prepare rendering.
         window.clear(sf::Color::White);
 
         // Draw all objects.
-        for (auto& object : world.Objects())
+        for (auto& object : world->Objects())
         {
             // Collider.
             auto& shape = object->Collider()->SFMLShape();
@@ -145,16 +146,16 @@ int main()
         }
 
         // Draw gizmo for object dragging.
-        if (dragger.IsObjectSelected())
+        if (dragger->IsObjectSelected())
         {
             window.draw(gizmo.Point(ui.MousePosition()));
 
-            window.draw(gizmo.Point(dragger.PickedPoint()));
-            window.draw(gizmo.Direction(dragger.PickedPoint(), dragger.DragVector(), sf::Color::Blue));
+            window.draw(gizmo.Point(dragger->PickedPoint()));
+            window.draw(gizmo.Direction(dragger->PickedPoint(), dragger->DragVector(), sf::Color::Blue));
         }
 
         // Draw contact points for all collisions.
-        for (const auto& collision : world.Collisions())
+        for (const auto& collision : world->Collisions())
         {
             for (const auto& contact : collision.info.contacts)
             {

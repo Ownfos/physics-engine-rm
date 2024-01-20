@@ -1,6 +1,7 @@
 #ifndef PHYSICS_OBJECT_DRAGGER_H
 #define PHYSICS_OBJECT_DRAGGER_H
 
+#include "IMouseAction.h"
 #include "World.h"
 
 namespace physics
@@ -10,25 +11,27 @@ namespace physics
  * @brief Handles picking an object in the scene with mouse
  *        and applying force towards the cursor.
  */
-class ObjectDragger
+class ObjectDragger : public IMouseAction
 {
 public:
+    ObjectDragger(std::shared_ptr<World> world);
+
     /**
      * @brief Try to pick an object under the cursor.
      * 
      * @note Static objects are ignored.
      */
-    void OnMouseClick(const Vec3& mouse_pos, World& world);
+    virtual void OnMouseClick(const Vec3& mouse_pos) override;
 
     /**
      * @brief Update drag vector, which will be the direction of force.
      */
-    void OnMouseDown(const Vec3& mouse_pos);
+    virtual void OnMouseDown(const Vec3& mouse_pos) override;
 
     /**
      * @brief Reset picked object to null.
      */
-    void OnMouseRelease();
+    virtual void OnMouseRelease(const Vec3& mouse_pos) override;
 
     /**
      * @brief Pull the selected object towards the cursor.
@@ -57,6 +60,7 @@ public:
     Vec3 DragVector() const;
 
 private:
+    std::shared_ptr<World> m_world;
     std::shared_ptr<Rigidbody> m_picked_object;
     Vec3 m_picked_offset;
     Vec3 m_drag_vector;

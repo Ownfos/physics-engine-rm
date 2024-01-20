@@ -4,7 +4,13 @@
 namespace physics
 {
 
-void UI::UpdateGUI()
+void UI::Update()
+{
+    DrawUI();
+    HandleMouseAction();
+}
+
+void UI::DrawUI()
 {
     ImGui::Begin("Options");
     ImGui::SliderFloat("time scale", &m_time_scale, 0.01f, 1.0f);
@@ -22,21 +28,32 @@ void UI::UpdateGUI()
     ImGui::End();
 }
 
-void UI::UpdateObjectDragger(ObjectDragger& object_dragger, World& world)
+void UI::HandleMouseAction()
 {
+    // Do nothing if no action is registered yet.
+    if (m_mouse_action == nullptr)
+    {
+        return;
+    }
+
     const auto mouse_pos = MousePosition();
     if (ImGui::IsMouseClicked(ImGuiMouseButton_Left))
     {
-        object_dragger.OnMouseClick(mouse_pos, world);
+        m_mouse_action->OnMouseClick(mouse_pos);
     }
     else if (ImGui::IsMouseDown(ImGuiMouseButton_Left))
     {
-        object_dragger.OnMouseDown(mouse_pos);
+        m_mouse_action->OnMouseDown(mouse_pos);
     }
     else if (ImGui::IsMouseReleased(ImGuiMouseButton_Left))
     {
-        object_dragger.OnMouseRelease();
+        m_mouse_action->OnMouseRelease(mouse_pos);
     }
+}
+
+void UI::SetMouseAction(std::shared_ptr<IMouseAction> mouse_action)
+{
+    m_mouse_action = mouse_action;
 }
 
 bool UI::IsGravityEnabled() const

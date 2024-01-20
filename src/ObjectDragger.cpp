@@ -4,9 +4,13 @@
 namespace physics
 {
 
-void ObjectDragger::OnMouseClick(const Vec3& mouse_pos, World& world)
+ObjectDragger::ObjectDragger(std::shared_ptr<World> world)
+    : m_world(world)
+{}
+
+void ObjectDragger::OnMouseClick(const Vec3& mouse_pos)
 {
-    if (m_picked_object = world.PickObject(mouse_pos))
+    if (m_picked_object = m_world->PickObject(mouse_pos))
     {
         // Do not select static objects.
         if (m_picked_object->IsStatic())
@@ -29,7 +33,7 @@ void ObjectDragger::OnMouseDown(const Vec3& mouse_pos)
     }
 }
 
-void ObjectDragger::OnMouseRelease()
+void ObjectDragger::OnMouseRelease(const Vec3& mouse_pos)
 {
     m_picked_object.reset();
 }

@@ -1,7 +1,8 @@
 #ifndef PHYSICS_UI_H
 #define PHYSICS_UI_H
 
-#include "ObjectDragger.h"
+#include "IMouseAction.h"
+#include <memory>
 
 namespace physics
 {
@@ -12,8 +13,19 @@ namespace physics
 class UI
 {
 public:
-    void UpdateGUI();
-    void UpdateObjectDragger(ObjectDragger& object_dragger, World& world);
+    /**
+     * @brief Render ImGUI elements and handle mouse action if any.
+     * 
+     * @note This should be called after ImGui::SFML::Update() and before ImGui::SFML::Render().
+     */
+    void Update();
+
+    /**
+     * @brief Change how we react to the mouse clicks.
+     * 
+     * @param mouse_action A pointer to an instance of IMouseAction child class.
+     */
+    void SetMouseAction(std::shared_ptr<IMouseAction> mouse_action);
 
     bool IsUpdateRequired() const;
     bool IsGravityEnabled() const;
@@ -28,6 +40,9 @@ public:
     Vec3 MousePosition() const;
 
 private:
+    void DrawUI();
+    void HandleMouseAction();
+
     bool m_enable_gravity = true;
     bool m_enable_collision = true;
     bool m_enable_update = true;
@@ -39,6 +54,8 @@ private:
     float m_linear_damping = 0.0f;
     float m_angular_damping = 0.0f;
 
+    // The action executed in response to mouse clicks.
+    std::shared_ptr<IMouseAction> m_mouse_action;
 };
 
 } // namespace physics
