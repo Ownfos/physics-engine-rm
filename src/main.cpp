@@ -7,6 +7,7 @@
 #include "UI.h"
 #include "ObjectDragger.h"
 #include "PolygonDrawer.h"
+#include "SpringConnector.h"
 
 using namespace physics;
 
@@ -43,10 +44,12 @@ int main()
     auto world = std::make_shared<World>();
     auto dragger = std::make_shared<ObjectDragger>(world);
     auto drawer = std::make_shared<PolygonDrawer>(world);
+    auto spring = std::make_shared<SpringConnector>(world);
 
     auto ui = UI();
     ui.AddMouseActionType(dragger);
     ui.AddMouseActionType(drawer);
+    ui.AddMouseActionType(spring);
 
     auto object1 = CreateObject(std::make_shared<Circle>(20.0f));
     object1->Transform().SetPosition({100, 310});
@@ -161,6 +164,16 @@ int main()
         for (const auto& vertex : drawer->CurrentVertices())
         {
             window.draw(gizmo.Point(vertex, sf::Color::Magenta));
+        }
+
+        // Draw gizmo for spring connections.
+        for (const auto& spring : world->Springs())
+        {
+            const auto start = spring.start.GlobalPosition();
+            const auto end = spring.end.GlobalPosition();
+            window.draw(gizmo.Point(start, sf::Color::Green));
+            window.draw(gizmo.Point(end, sf::Color::Green));
+            window.draw(gizmo.Line(start, end, sf::Color::Green));
         }
 
         // Draw contact points for all collisions.

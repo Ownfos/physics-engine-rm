@@ -14,7 +14,7 @@ std::string ObjectDragger::Description() const
 }
 std::string ObjectDragger::Tooltip() const
 {
-    return "Click and drag an object to pull them";
+    return "Click and drag an object to pull it";
 }
 
 void ObjectDragger::OnMouseClick(const Vec3& mouse_pos)

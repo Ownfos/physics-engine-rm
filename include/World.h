@@ -2,6 +2,7 @@
 #define PHYSICS_WORLD_H
 
 #include "Rigidbody.h"
+#include "Spring.h"
 
 namespace physics
 {
@@ -20,6 +21,11 @@ public:
      */
     std::vector<std::shared_ptr<Rigidbody>>& Objects();
     const std::vector<std::shared_ptr<Rigidbody>>& Objects() const;
+
+    /**
+     * @return The list of all springs managed by this instance.
+     */
+    const std::vector<Spring>& Springs() const;
 
     /**
      * @return The list of collisions occured during this time step.
@@ -62,6 +68,12 @@ public:
     void RemoveObject(const std::shared_ptr<Rigidbody>& object);
 
     /**
+     * @brief Add and remove a spring from this simulator.
+     */
+    void AddSpring(const Spring& spring);
+    void RemoveSpringOnObject(const std::shared_ptr<Rigidbody>& object);
+
+    /**
      * @return The first rigidbody which contains the specified point.
      * 
      * @note If there are multiple candidates, the 'oldest' object is selected.
@@ -97,6 +109,11 @@ private:
      * @brief List of all registered rigidbodies.
      */
     std::vector<std::shared_ptr<Rigidbody>> m_objects;
+
+    /**
+     * @brief List of all registered springs.
+     */
+    std::vector<Spring> m_springs;
 
     /**
      * @brief Stores all collisions detected during this time step.

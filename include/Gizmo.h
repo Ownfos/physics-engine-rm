@@ -19,10 +19,12 @@ public:
 
     sf::Shape& Point(const Vec3& pos, const sf::Color& color = sf::Color::Black);
     sf::Shape& Direction(const Vec3& pos, const Vec3& dir, const sf::Color& color = sf::Color::Black);
+    sf::Drawable& Line(const Vec3& start, const Vec3& end, const sf::Color& color = sf::Color::Black);
 
 private:
     sf::RectangleShape m_dot;
-    sf::RectangleShape m_line;
+    sf::RectangleShape m_direction;
+    sf::VertexArray m_line;
 };
 
 } // namespace physics

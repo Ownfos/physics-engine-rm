@@ -14,6 +14,11 @@ const std::vector<std::shared_ptr<Rigidbody>>& World::Objects() const
     return m_objects;
 }
 
+const std::vector<Spring>& World::Springs() const
+{
+    return m_springs;
+}
+
 const std::vector<CollisionPair>& World::Collisions() const
 {
     return m_collisions;
@@ -45,6 +50,25 @@ void World::AddObject(std::shared_ptr<Rigidbody> object)
 void World::RemoveObject(const std::shared_ptr<Rigidbody>& object)
 {
     m_objects.erase(std::find(m_objects.begin(), m_objects.end(), object));
+}
+
+void World::AddSpring(const Spring& spring)
+{
+    m_springs.push_back(spring);
+}
+
+void World::RemoveSpringOnObject(const std::shared_ptr<Rigidbody>& object)
+{
+    // Returns true for a spring connected to the specified object.
+    const auto pred = [&object](const auto& spring){
+        return spring.start.object == object || spring.end.object == object;
+    };
+
+    // Note: erase-remove idiom!
+    m_springs.erase(
+        std::remove_if(m_springs.begin(), m_springs.end(), pred),
+        m_springs.end()
+    );
 }
 
 std::shared_ptr<Rigidbody> World::PickObject(const Vec3& pos)
@@ -233,6 +257,11 @@ void World::ResolveCollisions(float delta_time)
 
 void World::Update(float delta_time)
 {
+    for (auto& spring : m_springs)
+    {
+        spring.ApplyImpulse(delta_time);
+    }
+
     for (const auto& obj : m_objects)
     {
         obj->Update(delta_time);
