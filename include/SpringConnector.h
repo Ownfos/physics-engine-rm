@@ -23,11 +23,22 @@ public:
     virtual void OnMouseDown(const Vec3& mouse_pos) override;
     virtual void OnMouseRelease(const Vec3& mouse_pos) override;
 
+    /**
+     * @brief Change the strength of newly created springs.
+     * 
+     * @param coefficient A positive value representing the strength.
+     * 
+     * @note This does not affect existing springs!
+     */
+    void ConfigureSprintCoefficient(float coefficient);
+
 private:
     std::optional<AnchorPoint> TryPickAnchorPoint(const Vec3& mouse_pos) const;
 
     std::shared_ptr<World> m_world;
     std::optional<AnchorPoint> m_spring_start;
+
+    float m_spring_coefficient = 10000.0f;
 };
 
 } // namespace physics

@@ -37,6 +37,7 @@ public:
     float GravityStrength() const;
     float LinearDamping() const;
     float AngularDamping() const;
+    float SpringCoefficient() const;
 
     Vec3 MousePosition() const;
 
@@ -54,6 +55,7 @@ private:
     float m_gravity_strength = 9.8f;
     float m_linear_damping = 0.0f;
     float m_angular_damping = 0.0f;
+    float m_spring_coefficient = 10000.0f;
 
     // List of all possible actions for mouse clicks.
     // One of them will be chosen and set as m_active_mouse_action.

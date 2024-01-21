@@ -51,13 +51,20 @@ void SpringConnector::OnMouseRelease(const Vec3& mouse_pos)
                     .start = m_spring_start.value(),
                     .end = spring_end.value(),
                     .neutral_distance = neutral_distance,
-                    .coefficient = 10000.0f
+                    .coefficient = m_spring_coefficient
                 });
             }
         }
 
         m_spring_start.reset();
     }
+}
+
+void SpringConnector::ConfigureSprintCoefficient(float coefficient)
+{
+    assert(coefficient > 0.0f);
+
+    m_spring_coefficient = coefficient;
 }
 
 std::optional<AnchorPoint> SpringConnector::TryPickAnchorPoint(const Vec3& mouse_pos) const

@@ -13,7 +13,6 @@ using namespace physics;
 
 /*
 TODO:
-- implement spring
 - add description about the math stuff used to derive equation for impulse magnitude...
 */
 
@@ -99,6 +98,7 @@ int main()
         auto delta_time = deltaClock.restart();
         ImGui::SFML::Update(window, delta_time);
         ui.Update();
+        spring->ConfigureSprintCoefficient(ui.SpringCoefficient());
 
         auto time_step = delta_time.asSeconds() * ui.TimeScale();
 

@@ -14,7 +14,7 @@ void UI::DrawUI()
 {
     ImGui::Begin("Options");
 
-    ImGui::SeparatorText("Mouse Action");
+    ImGui::SeparatorText("Mouse Right Click");
     for (int i = 0; i < m_mouse_actions.size(); ++i)
     {
         ImGui::RadioButton(m_mouse_actions[i]->Description().c_str(), &m_active_mouse_action_index, i);
@@ -41,6 +41,10 @@ void UI::DrawUI()
     }
     ImGui::NewLine();
 
+    ImGui::SeparatorText("Spring");
+    ImGui::SliderFloat("spring coefficient", &m_spring_coefficient, 1000.0f, 50000.0f);
+    ImGui::NewLine();
+
     
     ImGui::SeparatorText("Velocity Damping");
     ImGui::SliderFloat("linear damping", &m_linear_damping, 0.0f, 0.1f);
@@ -60,15 +64,15 @@ void UI::HandleMouseAction()
 
     const auto mouse_pos = MousePosition();
     auto& action = m_mouse_actions[m_active_mouse_action_index];
-    if (ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+    if (ImGui::IsMouseClicked(ImGuiMouseButton_Right))
     {
         action->OnMouseClick(mouse_pos);
     }
-    else if (ImGui::IsMouseDown(ImGuiMouseButton_Left))
+    else if (ImGui::IsMouseDown(ImGuiMouseButton_Right))
     {
         action->OnMouseDown(mouse_pos);
     }
-    else if (ImGui::IsMouseReleased(ImGuiMouseButton_Left))
+    else if (ImGui::IsMouseReleased(ImGuiMouseButton_Right))
     {
         action->OnMouseRelease(mouse_pos);
     }
@@ -117,6 +121,11 @@ float UI::LinearDamping() const
 float UI::AngularDamping() const
 {
     return m_angular_damping;
+}
+
+float UI::SpringCoefficient() const
+{
+    return m_spring_coefficient;
 }
 
 Vec3 UI::MousePosition() const
